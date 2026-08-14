@@ -10,6 +10,10 @@ import { encodeFunctionData, type WalletClient } from 'viem';
 
 export type Side = 'long' | 'short';
 
+/* The Inco Lightning entrypoint. Same address on Base and Base Sepolia per @inco/lightning's
+   generated Lib.sol; the contract itself calls this to charge per encrypted input. */
+export const INCO_ADDRESS = '0x4b9911b0191B0b6a6eA8F2Ed562e20Cff5AC8624' as const;
+
 export type OrderIntent = {
   symbol: string;
   side: Side;
@@ -45,6 +49,13 @@ export const INCOGNITO_ABI = [
 
 export const contractAddress = () =>
   (import.meta.env.VITE_INCOGNITO_CONTRACT ?? '').trim();
+
+/** Inco's live fee, read from the contract it will be paid to. NEVER hardcode it — the docs
+ *  are explicit that the fee can change via upgrades, and a stale constant means every order
+ *  reverts with FeeTooLow at the worst possible moment. */
+const INCO_ABI = [
+  { type: 'function', name: 'getFee', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+] as const;
 
 /** Is the shielded path actually available? Called before the ticket lets anyone commit. */
 export function shieldedReady(shieldedAddress?: string | null): { ready: boolean; reason?: string } {
@@ -95,14 +106,26 @@ export async function placeShieldedOrder(
     });
     // Sent by the SHIELDED wallet. If this client is ever the user's main wallet, the whole
     // product is broken — the caller is responsible for never passing one.
+    // submitOrder reverts with FeeTooLow below inco.getFee(). Read it from the live Inco
+    // contract rather than sending 0 — which is what this did, and would have failed every
+    // order the first time one was actually attempted.
+    let fee = 0n;
+    try {
+      const { createPublicClient, http } = await import('viem');
+      const pub = createPublicClient({ chain: shielded.client.chain!, transport: http() });
+      fee = (await pub.readContract({
+        address: INCO_ADDRESS, abi: INCO_ABI, functionName: 'getFee',
+      })) as bigint;
+    } catch {
+      return { ok: false, reason: 'Could not read the Inco fee — not placing blind' };
+    }
+
     const txHash = await shielded.client.sendTransaction({
       account: shielded.address as `0x${string}`,
       to: dapp,
       data,
-      // Inco charges per encrypted input; the contract forwards it. Read at call time rather
-      // than hardcoded — the docs are explicit that the fee can change via upgrades.
-      value: 0n,
-      chain: null,
+      value: fee,
+      chain: shielded.client.chain,
     } as any);
     return { ok: true, txHash, shieldedAddress: shielded.address };
   } catch (err: any) {

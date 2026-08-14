@@ -953,10 +953,10 @@ function PerpBody({ sym }: { sym: string }) {
           size: usd,
           leverage: confirm.lev,
         },
-        // TODO(next): a viem WalletClient over the shielded Privy wallet. Until it exists this
-        // returns "Shielded wallet unavailable" and places nothing — the correct behaviour,
-        // not a stub.
-        null,
+        // The shielded signer. getClient() switches the embedded wallet to Base first and
+        // returns null on any failure, so a signer we could not reach places nothing rather
+        // than falling through to a wallet that would identify the user.
+        await shielded.getClient(),
       );
       if (!res.ok) toast(res.reason, { icon: 'close' });
       else toast(`Order sealed into epoch ${epoch.epochId ?? '—'}`, { icon: 'check' });
