@@ -107,21 +107,39 @@ These are in the spec's open questions and any of them can cost you an hour on t
 
 ## Deploying the contract (Base Sepolia)
 
-Everything is ready except gas. Generate a throwaway deployer and fund it:
+Everything is ready except gas. Two commands, then paste the address back.
+
+**1 — make a deployer.** It needs gas and nothing else; no user funds ever touch it.
 
 ```bash
-cast wallet new                      # prints an address + key; keep the key OUT of the repo
-# fund the address at a Base Sepolia faucet, then:
+cast wallet new ~/.foundry/keystores      # prompts for a password, writes an ENCRYPTED keystore
+```
 
+It prints an address. Fund that at a **Base Sepolia** faucet, then:
+
+**2 — deploy.**
+
+```bash
 cd contracts
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url https://sepolia.base.org \
+  --account <keystore-name> --sender <address> \
+  --broadcast -vvv
+```
+
+If you would rather not deal with a keystore, a raw key works too — it is a throwaway testnet
+wallet holding only faucet ETH:
+
+```bash
 DEPLOYER_KEY=0x... forge script script/Deploy.s.sol:Deploy \
   --rpc-url https://sepolia.base.org --broadcast -vvv
 ```
 
-The script refuses to broadcast with an empty wallet and says why, rather than failing
-mid-run with something that reads like a node error.
+The script checks the balance first and refuses with `deployer has no gas - fund it from a Base
+Sepolia faucet`, rather than letting forge fail mid-broadcast with something that reads like a
+node error.
 
-It prints the address to put in `web/.env.local`:
+**3 — wire it in.** The script prints the address; put it in `web/.env.local`:
 
 ```
 VITE_INCOGNITO_CONTRACT=0x...
@@ -130,10 +148,9 @@ VITE_INCOGNITO_CONTRACT=0x...
 That is what turns the sealed book's `0 sealed` and `—` into real on-chain numbers, and what
 `lib/order.ts` is waiting for before it will place anything.
 
-**The deployer is not a wallet with a job.** It needs gas and nothing else — no user funds ever
-touch it. `KEEPER_ADDRESS` (defaults to the deployer) may only close epochs and publish
-aggregates; it cannot move anyone's collateral. Keeping those roles apart means a compromised
-keeper stalls the book instead of draining it.
+**Roles are separate on purpose.** `KEEPER_ADDRESS` (defaults to the sender) may only close
+epochs and publish aggregates — it can never move a user's collateral. A compromised keeper
+stalls the book instead of draining it.
 
 ## Safety rails
 
