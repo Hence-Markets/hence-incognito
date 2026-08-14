@@ -1,27 +1,13 @@
-/* Browser shims for the Node globals the Inco SDK expects.
+/* Superseded by vite-plugin-node-polyfills — see vite.config.ts.
  *
- * @inco/lightning-js reaches for `Buffer` — it is written for Node first — and Vite does not
- * polyfill Node globals. In the browser that surfaces as `Buffer is not defined`, thrown from
- * inside the SDK, at the two moments that matter most:
+ * This file used to assign globalThis.Buffer from the `buffer` package, imported first in
+ * main.tsx. That fixed dev and NOT production: manualChunks puts every node_modules module,
+ * `buffer` included, into a single `vendor` chunk which is evaluated before the app chunk this
+ * shim lived in. Dev worked, prod rendered a blank page, and the console said only "Buffer is
+ * not defined" from a minified vendor file.
  *
- *   · zap.encrypt(...)        — every order placement
- *   · zap.attestedReveal(...) — reading the published aggregate
- *
- * Neither is reachable by a typecheck or a build, so this stayed invisible until an order was
- * actually placed and a book actually netted. Both failed identically, which is what pointed at
- * a shared cause rather than two bugs.
- *
- * Imported for its side effect, FIRST, before anything that might touch the SDK.
+ * Kept as a stub rather than deleted so the import in main.tsx does not become a merge
+ * surprise, and so the next person to hit a Node-global error finds this note instead of
+ * re-deriving it. Add nothing here — fix it in the plugin config, which injects per-chunk.
  */
-import { Buffer } from 'buffer';
-
-const g = globalThis as any;
-
-if (!g.Buffer) g.Buffer = Buffer;
-// Some Node-targeted bundles probe `global` rather than `globalThis`.
-if (!g.global) g.global = globalThis;
-// A minimal `process` — libraries commonly branch on process.env.NODE_ENV and crash on an
-// undefined `process` long before they reach anything that needs a real one.
-if (!g.process) g.process = { env: {} };
-
 export {};
