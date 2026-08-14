@@ -37,6 +37,8 @@ type Props = {
   prevNetted?: boolean;
   /** how many orders the previous epoch held here — 0 means there was never a book */
   prevCount?: number;
+  /** which epoch the crossed figure describes */
+  crossedEpoch?: number | null;
   /** seconds until the epoch closes and netting runs */
   secondsLeft?: number;
   /** share of the LAST epoch that crossed internally, 0–1 */
@@ -52,9 +54,12 @@ const mmss = (s: number) =>
    submitOrder, so with no flow the open epoch sits past its close time indefinitely. That is
    fine on-chain (an empty epoch has nothing to net) but "00:00 until netting" counting down to
    nothing reads as a broken clock. Say what is actually true instead. */
-const clockLabel = (secondsLeft: number, live: boolean, sealed: number) => {
+const clockLabel = (secondsLeft: number, live: boolean, sealed: number, netted: boolean) => {
   if (!live) return { big: mmss(secondsLeft), sub: 'until netting' };
   if (secondsLeft > 0) return { big: mmss(secondsLeft), sub: 'until netting' };
+  // A netted book is finished, not waiting. Saying "awaiting netting" over one the keeper has
+  // already settled invents a backlog and makes a working system look stuck.
+  if (netted) return { big: 'netted', sub: 'matched on ciphertext' };
   return sealed > 0
     ? { big: 'closed', sub: 'awaiting netting' }
     : { big: 'open', sub: 'starts on the first order' };
@@ -63,6 +68,7 @@ const clockLabel = (secondsLeft: number, live: boolean, sealed: number) => {
 export function SealedBook({
   sym, resizer, sealed = 0, sealedAll = 0, secondsLeft = 0,
   lastCrossed = null, live = false, epochId = null, prevNetted = false, prevCount = 0,
+  crossedEpoch = null,
 }: Props) {
   const [tab, setTab] = useState<'sealed' | 'epochs'>('sealed');
   const asideRef = useRef<HTMLElement>(null);
@@ -157,7 +163,7 @@ export function SealedBook({
         ) : (
           <div className="term__book-body sealed">
             {(() => {
-              const c = clockLabel(secondsLeft, live, sealed);
+              const c = clockLabel(secondsLeft, live, sealed, prevNetted && prevCount > 0);
               return (
                 <div className="sealed__count">
                   <b>{c.big}</b>
@@ -183,7 +189,7 @@ export function SealedBook({
                 from a guess would make this panel indistinguishable from a mock, which is the
                 one thing it must never be. */}
             <div className="sealed__stat">
-              <span>Crossed internally</span>
+              <span>Crossed internally{crossedEpoch != null ? ` · #${crossedEpoch}` : ''}</span>
               <b className="is-hidden">{lastCrossed == null ? '—' : `${Math.round(lastCrossed * 100)}%`}</b>
             </div>
             <div className="sealed__stat">
@@ -193,7 +199,7 @@ export function SealedBook({
             {/* "awaiting keeper" over an epoch that never held an order in this market is a
                 false alarm — there is nothing there to net. An empty book says so. */}
             <div className="sealed__stat">
-              <span>Epoch {epochId != null && epochId > 1 ? `#${epochId - 1}` : 'previous'}</span>
+              <span>Book status</span>
               <b>{!live ? '—' : prevCount === 0 ? 'no book' : prevNetted ? 'netted' : 'awaiting keeper'}</b>
             </div>
             <p className="sealed__note">

@@ -1227,7 +1227,7 @@ function PerpBody({ sym }: { sym: string }) {
               the epoch closes — the panel shows what is actually knowable. */}
           <SealedBook sym={pair} resizer={rsz('book', 'l')} sealed={epoch.sealed} sealedAll={epoch.sealedAll}
             secondsLeft={epoch.secondsLeft} lastCrossed={epoch.lastCrossed} live={epoch.live}
-            epochId={epoch.epochId} prevNetted={epoch.prevNetted} prevCount={epoch.prevCount} />
+            epochId={epoch.epochId} prevNetted={epoch.prevNetted} prevCount={epoch.prevCount} crossedEpoch={epoch.crossedEpoch} />
 
           {/* order entry + account card (right column) */}
           <aside className="term__entry">

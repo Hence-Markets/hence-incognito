@@ -11,6 +11,7 @@
  *      and dock chrome that render outside the .term subtree
  *   3. the order path, swapped from Hyperliquid to encrypt → submit (see lib/order.ts)
  */
+import './lib/node-shims';   // MUST be first — the Inco SDK expects Node globals
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';

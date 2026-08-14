@@ -11,24 +11,17 @@
 import './env.js';   // MUST be first: api/access/fund all read process.env at module scope
 import { startApi } from './api.js';
 import { envReport } from './env.js';
+import { tick } from './tick.js';
 
 const EPOCH_SECONDS = Number(process.env.EPOCH_SECONDS ?? 300);
 const DRY_RUN = process.env.DRY_RUN !== '0';
 const MAX_ORDER_USD = Number(process.env.MAX_ORDER_USD ?? 100);
 
-async function tick() {
-  // 1. read orders whose epoch has closed
-  // 2. PHASE 2: net on ciphertext (e.min matched, e.add net) — never decrypt an order
-  // 3. PHASE 2: settle crossed legs internally, bounded +/-100%, and STOP — they never
-  //    reach Avantis. This is the only genuinely private execution in the design.
-  // 4. attested-decrypt the residual, sign EIP-712 OpenTradeReq from the shielded wallet
-  //    via Avantis DelegateReq, submit to the relayer
-  // 5. record fills
-  //
-  // Fail CLOSED at every step. If the shielded wallet is unavailable, the order must fail
-  // loudly rather than fall back to the user's main wallet — falling back would publish
-  // exactly the link this product exists to hide.
-}
+/* DRY_RUN gates the OUTBOUND VENUE LEG, not netting.
+   Netting and reveal move no user funds — they are the product, and a keeper that does nothing
+   by default is a keeper nobody notices is broken. What DRY_RUN holds back is sending a
+   residual to a public venue, which on Base Sepolia cannot happen anyway: Avantis is mainnet
+   only. See tick.ts. */
 
 async function main() {
   console.log(
@@ -45,7 +38,10 @@ async function main() {
     } catch (err) {
       console.error('[keeper] tick failed', err); // a bad tick must never kill the loop
     }
-    await new Promise((r) => setTimeout(r, EPOCH_SECONDS * 1000));
+    /* Poll faster than the epoch, not once per epoch. Sleeping a full epoch means an epoch
+       that closes just after a tick waits nearly two full epochs to be netted — on a 120s
+       demo that is four minutes of a book sitting visibly unprocessed. */
+    await new Promise((r) => setTimeout(r, Math.max(10, EPOCH_SECONDS / 6) * 1000));
   }
 }
 

@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { isAllowed, cohortSize } from './access.js';
 import { fundShielded, funderStatus } from './fund.js';
 import { verifyFundRequest } from './verify.js';
+import { outcomes, keeperStatus } from './tick.js';
 
 const PORT = Number(process.env.PORT ?? 4400);
 
@@ -48,6 +49,20 @@ export function startApi() {
         } catch (e: any) {
           json(res, 200, { ok: false, reason: e?.message ?? 'Funding failed' });
         }
+      });
+      return;
+    }
+
+    // What the keeper has actually netted — for the UI and for an operator who wants to see
+    // the last close without reading logs. Aggregates only; never an individual order.
+    if (req.method === 'GET' && req.url === '/api/epochs') {
+      json(res, 200, {
+        ok: true,
+        outcomes: outcomes.map((o) => ({
+          ...o,
+          residual: o.residual == null ? null : o.residual.toString(),
+          matched: o.matched == null ? null : o.matched.toString(),
+        })),
       });
       return;
     }
