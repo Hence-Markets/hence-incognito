@@ -1,158 +1,226 @@
 # Hence Incognito
 
-Shielded trading on [Avantis](https://avantisfi.com) (Base), with identity and pre-trade
-intent held in [Inco Lightning](https://inco.org).
+**An on-chain dark pool.** Your order is matched against other traders before any venue sees
+it — and whatever matches never reaches one at all.
 
-**The trade is public. You are not.** That distinction is the entire product — see
-"What is actually private" below, and do not let any copy overclaim past it.
+Built for the **Inco hackathon**, on Base Sepolia. Live at
+**[incognito.hence.markets](https://incognito.hence.markets)**.
 
-## How it works
+---
 
-Avantis positions are stored against a **plaintext trader address** and are permanently,
-publicly queryable — from the contract and from an unauthenticated API. Nothing can make a
-trade that reaches Avantis private. So this does not try to hide the trade; it hides **you**.
+## The problem
 
-Each trader gets a shielded wallet, **funded from a shared Hence address rather than their own**
-— that funding step is what breaks the on-chain link, and it means the crowd you blend into is
-every other Incognito user. Inco Lightning holds the order encrypted before execution (so
-nothing leaks into a public mempool) and holds the encrypted map between your account and that
-shielded address, so you can later *prove* a position was yours without publishing the link.
+On a perp DEX your position is public: size, entry, and your liquidation price. That is not a
+flaw in one venue, it is how on-chain trading works — and on a leveraged position, a public
+liquidation price is a target rather than a disclosure.
 
-### What is actually private — Phase 1 (shielded execution)
+Institutions solved this decades ago with dark pools. Show a large order to a public market and
+the market moves against you before you are filled, so instead you match with another trader
+privately and the venue never learns the trade happened.
 
-| | Hidden | Public |
-| --- | --- | --- |
-| Who placed the trade | ✅ | |
-| Your handle, profile, main wallet | ✅ | |
-| Pre-trade intent (no mempool signal) | ✅ | |
-| That the position exists, size, entry, leverage, liquidation price | | ❌ **forever** |
-| From Inco's TEE operators | | ❌ |
-| From chain analysis correlating amount + timing | | ❌ probabilistic only |
+**That has been impossible on-chain, because every order is public by construction.**
 
-**This is not a dark pool and we do not call it one.** A trader who believes they are invisible
-will size up — and on Avantis their exact liquidation price is readable by anyone, which is
-precisely what a liquidation hunter looks for. Overclaiming here would make users *more*
-exploitable, not less.
+## The insight
 
-### Phase 2 — where it becomes genuinely private
+You cannot hide a trade that reaches a public venue. Avantis stores positions against a
+plaintext address, permanently and queryably — no amount of encryption changes that once the
+order arrives.
 
-The claim changes shape here, and so does the UI. It stops being hidden-vs-public and becomes
-**conditional**: if your order matches, nothing about it ever reaches a public venue; if it
-does not, it goes out inside one net position that is public but unattributable. A trader
-cannot choose which happens, so promising "your trade is invisible" would be false on any day
-the book is one-sided. `VITE_PHASE` gates which claim the UI is allowed to make, and it
-**defaults to 1** — a misconfigured deploy must underclaim, never overclaim.
+So don't send it.
 
+Orders are matched **against each other, inside our contract, while still encrypted**. Only the
+leftover imbalance ever leaves. Matched volume is not obscured on a venue — it is *absent* from
+one, because it never went.
 
-Orders batch into short epochs and are netted **on ciphertext**: `e.min` gives matched volume,
-`e.add` gives the net, and no individual order is ever decrypted. Matched volume **crosses
-internally and never reaches Avantis at all** — not obscured, absent. Only the residual is sent.
-Revealing just the aggregate also lets the book publish "68% long" with every order still sealed.
+## How Inco makes it work
 
-Crossed legs are **bounded at ±100% of posted collateral**. Full collateralisation alone is not
-enough: a long at 1x can lose at most its stake, but a short's loss is unbounded. Bounding both
-sides makes a shortfall arithmetically impossible, which is what removes the need for a
-liquidation engine. Lifting that cap needs a real margin engine and is out of scope here.
+Inco Lightning lets a contract compute on encrypted data. `HenceIncognito.sol` stores each
+order's size as a `euint256` and nets an entire epoch on ciphertext:
 
-## Why this is a separate repo
-
-This is a hackathon build that may not survive the weekend. Keeping it out of the Hence
-codebase means that if it does not work out there is **no revert to perform** — no flag to
-unwind, no dead code to find in six months. You stop a container and delete a repo.
-
-### The boundary — three rules
-
-Break any of these and the clean-teardown property is gone:
-
-1. **No new tables in `hence_users`.** This service owns its own database.
-2. **No new dependencies in the Hence `web/`.**
-3. **No edits to `serve.py`.**
-
-The *only* thing shared is **Privy identity** — the same app ID across domains gives the same
-user here. This service verifies the Privy JWT itself. Patterns from the main app (JWKS verify,
-the keeper loop, the team gate) are **copied, not imported**, on purpose.
-
-## Layout
-
-```
-web/         standalone terminal — Avantis assets only, team-gated
-keeper/      epoch batcher, ciphertext netting, Avantis relay
-contracts/   HenceIncognito.sol — encrypted intent + attribution
+```solidity
+matched  = longs.min(shorts);            // crosses internally — never sent out
+residual = longs.max(shorts).sub(matched); // the only part a venue could see
 ```
 
-TypeScript throughout, deliberately: Inco's SDK is JS-only, and Avantis has no official TS SDK
-but is plain HTTP. A Python service would have split the stack for no gain.
+**No individual order is decrypted, here or ever.** Not by the contract, not by the keeper, not
+by us. After netting, only two aggregate totals are published, and only when the book is large
+enough that a total cannot be solved back into its parts.
 
-## Getting started
+Three facts about Inco shaped the whole design:
+
+1. **A contract cannot decrypt on its own** — `e.reveal()` only marks a handle publicly
+   decryptable; someone off-chain still fetches the attestation. That is *why* a keeper exists,
+   and also why the keeper is not trusted: once revealed, **anyone** can complete the step. The
+   browser does exactly that rather than asking our server what happened.
+2. **Encrypted conditions cannot drive `if`/`revert`** — the execution path itself would leak.
+   Everything conditional uses the `select` multiplexer.
+3. **Access is irreversible.** Privacy rests on this contract's logic never revealing an
+   individual order — auditable, since the code is public and immutable, but a weaker claim than
+   "mathematically impossible", and we say so.
+
+## What is actually private
+
+Being precise here matters more than sounding good.
+
+| | Status |
+|---|---|
+| **Order size** | 🔒 Encrypted in your browser, netted on ciphertext, never decrypted |
+| **Who you are** | 🔒 Orders execute from a shielded wallet, gas-funded from a shared omnibus so the funding transfer links nothing |
+| **Matched volume** | 🔒 Absent from any public venue — it never went |
+| Side (long/short) | 👁 Public |
+| Market (BTC/ETH/SOL) | 👁 Public |
+| Shielded address | 👁 Public — it is just not *you* |
+| Aggregate totals, after netting | 👁 Published deliberately, above a minimum book size |
+
+Side and market are public **on purpose**: the keeper has to know which market to route a
+residual to, and hiding them would mean netting across an encrypted selector — far more
+machinery than the privacy gain justifies. What is hidden is the **size** and the **owner**.
+
+Not private from Inco's operators, or from anyone analysing the chain.
+
+---
+
+## Architecture
+
+```
+   browser                     chain (Base)                   off-chain
+   ───────                     ────────────                   ─────────
+   web app  ──encrypt──▶  HenceIncognito.sol
+   (fork of Hence)         · submitOrder                    keeper (Node)
+        │                  · netEpoch      ◀──────────────── · closes epochs
+        │                  · revealAggregate                 · attested decrypt
+        │                                                    · routes the residual
+        └──reads + attestedReveal──▶ epochs / books                 │
+                                                                    ▼
+                                                             Avantis (Base mainnet)
+```
+
+| | |
+|---|---|
+| `contracts/` | `HenceIncognito.sol` — per-market epoch netting on ciphertext · 12 Foundry tests |
+| `keeper/` | Nets closed epochs, publishes aggregates, decrypts **only** the residual |
+| `web/` | A fork of the real Hence app — same terminal, tinted, with the order path rerouted |
+
+### The contract
+
+```
+0x431777cC5168cFe6D56B33D344E144699603FAe1   Base Sepolia (84532), block 45481692
+epochSeconds 120 · MIN_ORDERS_TO_REVEAL 5 · MAX_MARKETS_PER_EPOCH 8
+```
+
+- **`submitOrder(bytes encryptedSize, Side side, uint16 pair, bool routeResidual)`** — anyone.
+  Costs one Inco input fee.
+- **`netEpoch(uint64)`** — keeper only. Nets **each market separately**. An earlier version
+  summed a whole epoch into one book, which crossed a BTC long against a SOL short and called it
+  matched; that is not a hedge, it is a coincidence.
+- **`revealAggregate(uint64)`** — keeper only. Publishes each market's two totals, skipping any
+  book under `MIN_ORDERS_TO_REVEAL` — a total over a tiny book gives up its parts.
+
+`MAX_MARKETS_PER_EPOCH` bounds the netting loop. Without it, one order in each of thousands of
+pair indices makes `netEpoch` exceed the block gas limit and bricks that epoch for everyone in
+it.
+
+### Why three markets
+
+BTC, ETH and SOL, using Avantis' own pair indices. `matched = min(longs, shorts)` collapses to
+zero when a small book spreads across a hundred symbols — every market ends up with one order
+and nothing to cross. Concentration is what makes the number non-zero, which is also why equity
+dark pools live in the most-traded names and never the long tail.
+
+### The keeper is a convenience, not a dependency
+
+It can call `netEpoch` and `revealAggregate`, and attested-decrypt the residual. That is all. It
+cannot move collateral, read an individual order, or cancel one. A compromised keeper stalls the
+book; it cannot drain it or deanonymise anyone.
+
+`matched` is never revealed on chain — it is derived from the two published sums, so **anyone
+can recompute the crossed volume and the residual from public data and check the keeper's
+arithmetic.** The keeper checks itself the same way and refuses to act on a residual its own
+decrypt and the public sums disagree about.
+
+---
+
+## What is real, and what is not
+
+This is a **testnet demo**. Being exact about the boundary:
+
+| | |
+|---|---|
+| Order encryption, submission, netting, reveal | ✅ **Real**, on Base Sepolia |
+| Per-market books, crossed/residual arithmetic | ✅ **Real** — verifiable on chain |
+| Market list | ✅ **Real** — Avantis' own `/v2/pairs` |
+| Prices | Reference feed, not Avantis' oracle (which is mainnet-only) |
+| The residual reaching Avantis | ❌ **Cannot happen on Sepolia** |
+| Money | ❌ None. An order is an encrypted *intent*; nothing is escrowed |
+
+**There is no Avantis testnet.** `tx-builder-testnet.avantisfi.com/v2/meta` returns `chainId
+8453` with the same addresses as mainnet. So on Sepolia the unmatched remainder goes **unfilled**
+— which is ordinary crossing-network behaviour, not a missing feature: no counterparty, no fill,
+retry next epoch. Nothing was escrowed, so nothing is returned. Traders can opt to route it out
+instead; that path is the mainnet one.
+
+A verified run, on chain: **9 orders, $40,100 long vs $27,500 short → $27,500 crossed, $12,600
+residual.** 81% of the book never reached a venue.
+
+---
+
+## Running it
 
 ```bash
-cp .env.example .env      # every value starts empty = every feature off
-npm install
-npm run dev               # web
-npm run keeper            # keeper, separate terminal
+npm install                      # root: Foundry remappings resolve into ../node_modules
+cd contracts && forge test       # 12 tests
+cd ../keeper  && npm install && npm start
+cd ../web     && npm install && npm run dev
 ```
 
-Start on **Base Sepolia** (`VITE_NETWORK=testnet`) with `DRY_RUN=1`.
+`web/` and `contracts/` install **separately** — npm workspaces hoisting split `@types/react`
+18/19 and broke the fork.
 
-## Before you build — three unresolved things
+Copy `.env.example` and fill in: `INCOGNITO_CONTRACT`, `OMNIBUS_KEY` (keeper), and
+`VITE_INCOGNITO_CONTRACT`, `VITE_PRIVY_APP_ID` (web). Vite **inlines** `VITE_*` at build time —
+setting them at runtime does nothing, silently, and the epoch panel falls back to a local clock
+while still looking alive.
 
-These are in the spec's open questions and any of them can cost you an hour on the day:
-
-1. **Every Avantis address in `.env.example` is unverified.** They came from a research pass,
-   not from reading the chain. Check on Basescan before a single transaction.
-2. **`incognito.hence.markets` must be added to Privy's allowed origins**, or login fails.
-3. **Shielded wallet provenance** — a second Privy embedded wallet, or a keypair this service
-   manages? Confirm what Privy supports before building around either.
-
-
-## Deploying the contract (Base Sepolia)
-
-Everything is ready except gas. Two commands, then paste the address back.
-
-**1 — make a deployer.** It needs gas and nothing else; no user funds ever touch it.
+### Seeding a book
 
 ```bash
-cast wallet new ~/.foundry/keystores      # prompts for a password, writes an ENCRYPTED keystore
+cd keeper && npm run seed        # 5 long / 4 short into one market, one epoch
 ```
 
-It prints an address. Fund that at a **Base Sepolia** faucet, then:
+Real orders from real wallets, keys discarded. The only thing to disclose is their **origin**:
+one operator controls them all. Pre-seeded is not the same as simulated, and that distinction
+only survives scrutiny if you volunteer it.
 
-**2 — deploy.**
+`keeper/src/filler.ts` does the same on a schedule to keep epochs populated for visitors. Off by
+default, and it refuses to run on mainnet.
 
-```bash
-cd contracts
-forge script script/Deploy.s.sol:Deploy \
-  --rpc-url https://sepolia.base.org \
-  --account <keystore-name> --sender <address> \
-  --broadcast -vvv
-```
+---
 
-If you would rather not deal with a keystore, a raw key works too — it is a throwaway testnet
-wallet holding only faucet ETH:
+## Deployment
 
-```bash
-DEPLOYER_KEY=0x... forge script script/Deploy.s.sol:Deploy \
-  --rpc-url https://sepolia.base.org --broadcast -vvv
-```
+Two containers on the existing `hence-neo` stack, behind its Cloudflare tunnel — see
+`deploy/README.md`. It joins that stack rather than standing alone because the web app is a fork
+of Hence and inherits its whole market layer; nginx reaches `app:4317` by service name for
+prices and news.
 
-The script checks the balance first and refuses with `deployer has no gas - fund it from a Base
-Sepolia faucet`, rather than letting forge fail mid-broadcast with something that reads like a
-node error.
+The deploy workflow lives in the **private** `neo-hence` repo, deliberately: a self-hosted runner
+attached to a public repository executes code from any pull request.
 
-**3 — wire it in.** The script prints the address; put it in `web/.env.local`:
+---
 
-```
-VITE_INCOGNITO_CONTRACT=0x...
-```
+## Honest limits
 
-That is what turns the sealed book's `0 sealed` and `—` into real on-chain numbers, and what
-`lib/order.ts` is waiting for before it will place anything.
+1. **Not a privacy guarantee against Inco's operators**, or against chain analysis.
+2. **Netting needs counterparties.** With a thin book, `matched` is small and most of an order
+   goes unfilled. No engineering fixes that — it is why the design targets concentrated flow.
+3. **Unaudited prototype.** It may lose orders, mis-net a book, or stop working.
+4. **Phase 2 (real money) needs counsel** — custody plus operating a matching venue. Phase 3
+   (leverage) needs a margin and liquidation engine that does not exist.
 
-**Roles are separate on purpose.** `KEEPER_ADDRESS` (defaults to the sender) may only close
-epochs and publish aggregates — it can never move a user's collateral. A compromised keeper
-stalls the book instead of draining it.
+## Built for the Inco hackathon
 
-## Safety rails
+By [Hence](https://hence.markets). The Hence terminal predates the jam; the Inco Lightning
+dark-pool pilot — contract, keeper, shielded wallets, and the reworked order path — was built
+during it.
 
-`DRY_RUN=1` and `MAX_ORDER_USD` exist so the default posture is harmless. The omnibus key funds
-shielded wallets and **is the anonymity set** — give it the test budget and nothing else.
+Companion repo: [megapot-fee-accrual](https://github.com/Hence-Markets/megapot-fee-accrual).
