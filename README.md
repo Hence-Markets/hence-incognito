@@ -82,17 +82,57 @@ Not private from Inco's operators, or from anyone analysing the chain.
 
 ## Architecture
 
+Inco Lightning is not a component here, it is the layer the product stands on. Every box below
+that touches an order size is doing it through Inco.
+
 ```
-   browser                     chain (Base)                   off-chain
-   ───────                     ────────────                   ─────────
-   web app  ──encrypt──▶  HenceIncognito.sol
-   (fork of Hence)         · submitOrder                    keeper (Node)
-        │                  · netEpoch      ◀──────────────── · closes epochs
-        │                  · revealAggregate                 · attested decrypt
-        │                                                    · routes the residual
-        └──reads + attestedReveal──▶ epochs / books                 │
-                                                                    ▼
-                                                             Avantis (Base mainnet)
+   BROWSER                          CHAIN (Base)                    KEEPER (Node)
+   ───────                          ────────────                    ─────────────
+   ┌─────────────────────┐          ┌──────────────────────┐        ┌────────────────────┐
+   │ lib/order.ts        │          │ HenceIncognito.sol   │        │ src/tick.ts        │
+   │                     │          │                      │        │                    │
+   │ ❶ zap.encrypt(size) │─ciphertext▶ ❷ newEuint256()     │        │                    │
+   │                     │          │   .allowThis()       │        │                    │
+   │                     │          │   .allow(trader)     │        │                    │
+   └─────────────────────┘          │                      │◀───────│ netEpoch()         │
+                                    │ ❸ .add() .min()      │        │                    │
+   ┌─────────────────────┐          │   .max() .sub()      │        │ ❹ attestedDecrypt  │
+   │ hooks/useEpoch.ts   │          │   ON CIPHERTEXT      │────────▶   (residual ONLY)  │
+   │                     │          │                      │        │                    │
+   │ ❺ attestedReveal    │◀─────────│   e.reveal(sumLongs) │◀───────│ revealAggregate()  │
+   │   (the two totals)  │          │   e.reveal(sumShorts)│        │                    │
+   └─────────────────────┘          └──────────────────────┘        └────────┬───────────┘
+                                                                             │ residual
+                                          Inco Lightning                     ▼
+                                 0x4b9911b0191B0b6a6eA8F2Ed562e20Cff5AC8624
+                                    (same address on Base + Base Sepolia)     Avantis
+                                                                          (Base mainnet)
+```
+
+### Where Inco is used, exactly
+
+| | What | Where |
+|---|---|---|
+| ❶ | **`zap.encrypt(size)`** — the size is encrypted in the browser, bound to `(this account, this contract)`. Plaintext never leaves the device. | [`web/src/lib/order.ts:125`](web/src/lib/order.ts) |
+| ❷ | **`newEuint256()` + ACL** — the contract validates the handle's binding, then `allowThis()` so it can compute later, and `allow(trader)` so you keep access to your own figure. | [`contracts/src/HenceIncognito.sol:154`](contracts/src/HenceIncognito.sol) |
+| ❸ | **FHE arithmetic** — `add` to sum each side, `min` for matched, `max`/`sub` for the residual. **The netting itself.** No decryption at any point. | [`HenceIncognito.sol:189-208`](contracts/src/HenceIncognito.sol) |
+| ❹ | **`attestedDecrypt`** — the keeper decrypts the residual, and *only* the residual, because that is the only handle the contract ever granted it. | [`keeper/src/tick.ts:180`](keeper/src/tick.ts) |
+| ❺ | **`e.reveal` + `attestedReveal`** — the contract marks two totals publicly decryptable; the **browser** fetches the attestation itself. | [`HenceIncognito.sol:242`](contracts/src/HenceIncognito.sol) · [`web/src/hooks/useEpoch.ts:120`](web/src/hooks/useEpoch.ts) |
+
+Plus `inco.getFee()` at [`HenceIncognito.sol:143`](contracts/src/HenceIncognito.sol) — read live
+rather than hardcoded, because the docs are explicit that it can change on upgrade and a stale
+constant reverts every order — and `msg.sender.isAllowed(o.size)` at
+[`:255`](contracts/src/HenceIncognito.sol), which stops a caller reading someone else's handle
+through a contract that legitimately has access to it.
+
+**The line that matters:** step ❸ is the entire product, and it happens with nobody holding a
+decryption key. The keeper never sees an order. Neither do we.
+
+```solidity
+euint256 matched  = longs.min(shorts);            // crosses internally — never sent out
+euint256 residual = longs.max(shorts).sub(matched);
+
+residual.allow(keeper);   // the ONLY handle the keeper is ever granted
 ```
 
 | | |
