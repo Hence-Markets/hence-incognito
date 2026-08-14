@@ -1,0 +1,276 @@
+/* =========================================================
+   Hence webapp — Screener (feature slug: .scr-)
+   ========================================================= */
+
+.scr { padding: 18px 22px 40px; }
+
+/* ---------- top bar: title + filter chips + tools ---------- */
+.scr-bar {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 14px; min-height: 30px;
+}
+.scr-bar-l { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; flex-wrap: wrap; }
+.scr-back { flex: none; }
+.scr-title { font-size: 15px; font-weight: 600; color: var(--text); flex: none; }
+
+/* asset-class selector (Crypto / Stocks / Commodities / FX / Indices) */
+.scr-classtabs { display: inline-flex; align-items: center; gap: 2px; flex: none;
+  background: var(--elevated); border: 1px solid var(--line); border-radius: 9px; padding: 2px; }
+.scr-classtabs button { appearance: none; border: 0; background: transparent; cursor: pointer;
+  color: var(--dim); font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 7px;
+  white-space: nowrap; transition: background .12s var(--ease), color .12s var(--ease); }
+.scr-classtabs button:hover { color: var(--text); }
+.scr-classtabs button.on { background: var(--panel-2); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+
+.scr-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+
+/* a filter chip = [type][value][×] inside one rounded pill */
+.scr-chip {
+  display: inline-flex; align-items: center; gap: 0;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 999px; height: 26px; overflow: hidden;
+  font-size: 12px; line-height: 1;
+}
+.scr-chip-k { color: var(--dimmer); padding: 0 9px; height: 100%; display: inline-flex; align-items: center; }
+.scr-chip-v { color: var(--text); padding: 0 4px 0 9px; height: 100%; display: inline-flex; align-items: center; font-weight: 500;
+  border-left: 1px solid var(--line); }
+.scr-chip--empty .scr-chip-k { padding-right: 9px; }
+.scr-chip-x {
+  display: inline-grid; place-items: center; width: 22px; height: 100%;
+  border: none; background: transparent; color: var(--dimmer); cursor: pointer; padding: 0 6px 0 2px;
+}
+.scr-chip-x:hover { color: var(--text); }
+
+/* Add a filter button */
+.scr-addbtn {
+  display: inline-flex; align-items: center; gap: 6px; width: auto; height: 26px;
+  padding: 0 10px; border-radius: 999px; color: var(--dim); font-size: 12px;
+  background: transparent; border: 1px solid transparent;
+}
+.scr-addbtn:hover { background: var(--panel-2); border-color: var(--line); }
+.scr-addbtn span { white-space: nowrap; }
+
+.scr-bar-r { display: flex; align-items: center; gap: 8px; flex: none; }
+.scr-bar-r .icon-btn { width: 30px; height: 28px; border-radius: 8px; }
+
+/* ---------- stage (table area; popovers anchor here) ---------- */
+.scr-stage { position: relative; }
+
+/* ---------- dense results table ---------- */
+.scr-table {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel); overflow: hidden;
+}
+.scr-head, .scr-row {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.7fr)  /* company */
+    56px                  /* ccy */
+    minmax(96px, 0.9fr)   /* sector */
+    minmax(96px, 1fr)     /* fy1 */
+    minmax(110px, 1fr)    /* earnings */
+    minmax(84px, 0.9fr)   /* ebitda */
+    minmax(60px, 0.7fr)   /* pe */
+    minmax(70px, 0.7fr)   /* ev sales */
+    minmax(74px, 0.8fr)   /* mkt cap */
+    minmax(84px, 0.8fr)   /* avg vol */
+    minmax(84px, 0.8fr)   /* price */
+    minmax(96px, 0.9fr);  /* daily perf */
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+}
+
+.scr-head {
+  height: 38px; font-size: 11px; color: var(--dimmer); font-weight: 500;
+  border-bottom: 1px solid var(--line);
+}
+.scr-head .scr-num, .scr-head .scr-perf { text-align: right; }
+.scr-head .scr-co { display: inline-flex; align-items: center; gap: 7px; }
+.scr-count {
+  display: inline-grid; place-items: center; min-width: 18px; height: 16px; padding: 0 5px;
+  font-size: 10px; color: var(--dim); background: var(--elevated);
+  border: 1px solid var(--line); border-radius: 5px;
+}
+
+.scr-body { }
+.scr-row {
+  height: 46px; font-size: 12.5px; color: var(--text);
+  text-decoration: none; border-bottom: 1px solid var(--line);
+  transition: background .12s var(--ease);
+}
+.scr-row:last-child { border-bottom: none; }
+.scr-row:hover { background: var(--panel-2); }
+
+/* company cell */
+.scr-co { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+.scr-tk { font-weight: 600; color: var(--text); flex: none; }
+.scr-nm { color: var(--dim); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* prediction-market rows (Polymarket): event icon + the question as the row title */
+.scr-pm-ic { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; flex: none; }
+.scr-pm-ic--ph { display: inline-grid; place-items: center; width: 22px; height: 22px; background: var(--elevated); color: var(--dimmer); font-size: 11px; }
+.scr-pm-q { color: var(--text); font-weight: 550; font-size: 12.5px; }
+
+/* ccy pill */
+.scr-ccy { }
+.scr-pill-gray {
+  font-size: 9.5px; letter-spacing: .03em; color: var(--dimmer);
+  background: var(--elevated); border: 1px solid var(--line);
+  border-radius: 5px; padding: 2px 6px;
+}
+
+.scr-sec { color: var(--dim); font-size: 12px; }
+
+/* numeric cells right-aligned */
+.scr-num { text-align: right; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.scr-na { color: var(--dimmest); }
+.scr-earn { color: var(--dim); }
+.scr-px { font-weight: 600; }
+
+/* FY1 growth with arrow */
+.scr-fy { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.scr-fy.up { color: var(--up); }
+.scr-fy.down { color: var(--down); }
+.scr-ar { flex: none; }
+
+/* daily performance pill */
+.scr-perf { text-align: right; }
+.scr-pill {
+  display: inline-block; min-width: 58px; text-align: center;
+  font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.scr-pill.up { color: var(--up); background: var(--up-bg); }
+.scr-pill.down { color: var(--down); background: var(--down-bg); }
+
+.scr-copyright { margin-top: 14px; font-size: 11px; color: var(--dimmest); }
+
+/* ---------- empty state ---------- */
+.scr-empty {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel);
+  padding: 48px 24px 36px; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+}
+.scr-empty h2 { font-size: 15px; font-weight: 600; color: var(--text); }
+.scr-empty p { margin-top: 8px; font-size: 12px; color: var(--dim); display: flex; align-items: center; gap: 5px; justify-content: center; flex-wrap: wrap; }
+.scr-empty p .keycap { margin: 0 1px; }
+
+.scr-empty-ring { position: relative; width: 240px; height: 120px; margin: 26px 0; display: flex; align-items: center; justify-content: center; }
+.scr-empty-dot {
+  position: absolute; width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; color: var(--dimmest);
+  background: var(--panel-2); border: 1px solid var(--line);
+  opacity: .5;
+}
+.scr-empty-dot:nth-child(1) { left: 0; }
+.scr-empty-dot:nth-child(2) { left: 38px; }
+.scr-empty-dot:nth-child(3) { left: 76px; }
+.scr-empty-dot.mid {
+  left: 103px; width: 64px; height: 64px; opacity: 1;
+  background: transparent; border: 1.5px dashed var(--line-2);
+}
+.scr-empty-dot:nth-child(5) { right: 76px; }
+.scr-empty-dot:nth-child(6) { right: 38px; }
+.scr-empty-dot:nth-child(7) { right: 0; }
+
+.scr-clear {
+  margin-top: 6px; padding: 9px 18px; border-radius: 999px;
+  background: var(--elevated); border: 1px solid var(--line-2);
+  color: var(--text); font-size: 12.5px; font-weight: 500; cursor: pointer;
+}
+.scr-clear:hover { background: var(--hover); }
+
+/* ---------- popovers ---------- */
+.scr-pop {
+  position: absolute; z-index: 40; top: -2px;
+  background: var(--elevated); border: 1px solid var(--line-2);
+  border-radius: 12px; box-shadow: 0 30px 70px -20px rgba(0,0,0,.85);
+  padding: 6px; min-width: 220px;
+  animation: scr-pop-in .14s var(--ease);
+}
+@keyframes scr-pop-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* Add-a-filter / value picker dropdowns anchor near top-right of the chip row */
+.scr-pop--add, .scr-pop--value { top: -46px; left: 50%; }
+.scr-pop--value { left: 56%; }
+
+.scr-pop-input {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  margin-bottom: 4px;
+}
+.scr-pop-input input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 13px;
+}
+.scr-pop-input input::placeholder { color: var(--dimmer); }
+
+.scr-pop-list { display: flex; flex-direction: column; }
+.scr-pop-item {
+  text-align: left; padding: 8px 10px; border-radius: 7px;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--dim); font-size: 13px;
+}
+.scr-pop-item:hover, .scr-pop-item.on { background: var(--hover); color: var(--text); }
+
+/* sort + templates popovers anchor toward the right tools */
+.scr-pop--sort, .scr-pop--tpl {
+  top: -2px; right: 0; left: auto; min-width: 300px; padding: 8px;
+}
+.scr-pop--tpl { right: auto; left: 50%; transform: translateX(-30%); min-width: 340px; }
+
+.scr-pop-crumb {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; color: var(--dim); padding: 4px 8px 10px;
+  border-bottom: 1px solid var(--line); margin-bottom: 6px;
+}
+.scr-pop-cap { font-size: 10.5px; color: var(--dimmer); padding: 8px 8px 4px; }
+.scr-pop-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  text-align: left; padding: 9px 8px; border-radius: 8px;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--text); font-size: 13px;
+}
+.scr-pop-row svg { color: var(--dim); }
+.scr-pop-row .keycap { min-width: 22px; }
+.scr-pop-row:hover, .scr-pop-row.on { background: var(--hover); }
+
+.scr-pop-foot { margin-top: 6px; padding: 8px; border-top: 1px solid var(--line); }
+.scr-pop-foot input {
+  width: 100%; background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 8px; padding: 9px 12px; color: var(--text);
+  font-size: 13px; outline: none;
+}
+.scr-pop-foot input::placeholder { color: var(--dimmer); }
+
+/* save template title input */
+.scr-tpl-title { padding: 4px 8px 14px; }
+.scr-tpl-title input {
+  width: 100%; background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 18px; font-weight: 500;
+}
+.scr-tpl-title input::placeholder { color: var(--dimmer); }
+
+.scr-tpl-foot { display: flex; align-items: center; gap: 10px; }
+.scr-tpl-summary { flex: 1; font-size: 12px; color: var(--dimmer); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scr-tpl-save {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  background: var(--elevated); border: 1px solid var(--line-2);
+  color: var(--text); font-size: 12px; font-weight: 500;
+}
+.scr-tpl-save:hover { background: var(--hover); }
+.scr-tpl-save svg { color: var(--dim); }
+
+/* mobile: row 1 = back + title (tool icons absolutely placed beside the wallet chip);
+   the class tabs (Crypto/Stocks/…/Predictions) and filter chips each take their own
+   full-width row and WRAP — every option visible, no clipped/undiscoverable sliding.
+   The app.css 116px chip reserve is dropped here: it would constrain EVERY wrapped
+   row, when only row 1 needs to clear the chip. */
+@media (max-width: 760px) {
+  .scr-bar { position: relative; flex-wrap: wrap; padding-right: 0 !important; }
+  .scr-bar-l { flex: 1 0 100%; row-gap: 12px; }
+  .scr-bar-r { position: absolute; top: 0; right: 122px; }
+  .scr-classtabs { flex: 1 0 100%; }
+  .scr-chips { flex: 1 0 100%; }
+}

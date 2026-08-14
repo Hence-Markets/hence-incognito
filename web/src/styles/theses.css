@@ -1,0 +1,86 @@
+/* =========================================================================
+   Theses screen — the full saved-thesis list + nightly-checker verdicts
+   ========================================================================= */
+.thx { max-width: 760px; margin: 0 auto; padding: 26px 22px 60px; }
+.thx__head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; padding-right: 132px; }
+.thx__head h2 { font-size: 20px; font-weight: 650; margin: 0; }
+.thx__subtitle { font-size: 12.5px; color: var(--dim); }
+
+.thx__filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.thx__filters button { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 550; color: var(--dim); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 12px; background: none; }
+.thx__filters button em { font-style: normal; font-size: 10.5px; color: var(--dimmer); font-variant-numeric: tabular-nums; }
+.thx__filters button.on { color: var(--text); background: var(--elevated); border-color: var(--line); }
+
+.thx__list { display: flex; flex-direction: column; gap: 12px; }
+.thx__none { padding: 34px 0; text-align: center; color: var(--dimmer); font-size: 12.5px; }
+.thx__loading { display: flex; flex-direction: column; gap: 12px; }
+
+.thx__card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
+.thx__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.thx__dir { font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 6px; padding: 2px 7px; background: var(--elevated); color: var(--dim); flex: none; }
+.thx__dir--long { color: var(--up); }
+.thx__dir--short { color: var(--down); }
+.thx__title { font-size: 14px; font-weight: 650; min-width: 0; }
+.thx__meta { font-size: 11px; color: var(--dimmer); margin-left: auto; white-space: nowrap; }
+.thx__badge { font-size: 10px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; border-radius: 6px; padding: 2px 7px; flex: none; }
+.thx__badge--act { color: var(--up); background: color-mix(in srgb, var(--up) 12%, transparent); }
+.thx__badge--inv { color: var(--down); background: color-mix(in srgb, var(--down) 12%, transparent); }
+.thx__badge--due { color: #e6c84f; background: color-mix(in srgb, #e6c84f 16%, transparent); }
+.thx__badge--res { color: var(--dim); background: var(--elevated); }
+.thx__sum { margin: 0; font-size: 12.5px; color: var(--dim); line-height: 1.55; }
+
+.thx__syms { display: flex; gap: 6px; flex-wrap: wrap; }
+.thx__syms a { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; color: var(--text); border: 1px solid var(--line-2); border-radius: 999px; padding: 3px 9px 3px 4px; background: var(--elevated); }
+.thx__syms a:hover { background: var(--hover); }
+
+.thx__legs { display: flex; flex-direction: column; gap: 5px; }
+.thx__leg { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; padding: 6px 9px; border: 1px solid var(--line-2); border-radius: 9px; background: var(--elevated); }
+.thx__venue { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--dimmer); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 5px; flex: none; }
+.thx__q { font-weight: 600; font-size: 12px; }
+.thx__side { font-size: 10.5px; font-weight: 650; text-transform: uppercase; flex: none; }
+.thx__side--long, .thx__side--yes { color: var(--up); }
+.thx__side--short, .thx__side--no { color: var(--down); }
+.thx__inv { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--dim); min-width: 0; }
+
+.thx__check { font-size: 11.5px; color: var(--dimmer); }
+.thx__check--bad { color: var(--down); display: inline-flex; align-items: center; gap: 5px; }
+
+.thx__acts { display: flex; gap: 7px; flex-wrap: wrap; }
+.thx__act { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 550; color: var(--dim); border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 11px; background: none; }
+.thx__act:hover { color: var(--text); background: var(--hover); }
+.thx__act--pri { color: var(--text); background: var(--elevated); }
+
+.thx__evs { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--line); padding-top: 9px; }
+.thx__ev { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); padding: 5px 2px; border-radius: 7px; }
+a.thx__ev:hover { background: var(--hover); }
+.thx__evt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thx__evm { margin-left: auto; font-size: 10.5px; color: var(--dimmer); white-space: nowrap; flex: none; }
+
+.thx__empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 64px 20px; color: var(--dim); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.thx__empty b { color: var(--text); font-size: 14px; }
+.thx__empty p { margin: 0; font-size: 12.5px; max-width: 380px; line-height: 1.55; }
+.thx__cta { margin-top: 6px; height: 34px; padding: 0 18px; border-radius: 9px; background: var(--text); color: var(--bg); font-size: 12.5px; font-weight: 650; }
+
+/* the author-side surface: what your published theses did for other people */
+.thx__reach { display: flex; flex-direction: column; gap: 7px; padding: 12px 14px; margin-bottom: 12px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+.thx__reach-h { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--peach); }
+.thx__reach-nums { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--dim); }
+.thx__reach-nums b { color: var(--text); font-size: 15px; font-weight: 650; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.thx__reach-top { font-size: 11px; color: var(--dimmer); }
+
+@media (max-width: 640px) {
+  .thx { padding: 18px 14px 90px; }
+  .thx__reach-nums { gap: 12px; }
+  .thx__head { padding-right: 0; }
+  .thx__meta { margin-left: 0; width: 100%; }
+}
+
+/* ── final P&L: the thesis's outcome once every leg is closed. The portfolio stops showing
+   a closed thesis (live money only); this line is where the result lives on. ── */
+.thx__final{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:620;
+  font-variant-numeric:tabular-nums;margin:2px 0 4px}
+.thx__final--up{color:var(--green,#4ade80)}
+.thx__final--down{color:var(--red,#f87171)}
+.thx__final-note{font-size:10.5px;font-weight:500;color:var(--dimmer,#6b7280)}
+.thx__card--exited{opacity:.82}
+.thx__card--exited:hover{opacity:1}

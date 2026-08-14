@@ -1,0 +1,49 @@
+/* =========================================================================
+   loading.css — the universal loading vocabulary.
+
+   Three primitives, one per scenario:
+   • .hence-load  — the ∴ brand spinner (three "therefore" dots rotating around
+     their centre). For first-load / full-panel / button waits. Inherits
+     currentColor. `--pulse` variant breathes the dots in sequence (calm
+     "thinking"/AI-generating states).
+   • .skeleton    — shimmer block sized to the content it stands in for. For
+     fast-shell-slow-data (layout paints, cells fill in). Never shows 0/—.
+   • .hence-refresh — a tiny ∴ spin shown beside CACHED data that's being
+     revalidated (stale-while-revalidate), so the user knows it's live, not stuck.
+   ========================================================================= */
+
+/* ---- ∴ brand spinner ------------------------------------------------------ */
+.hence-load { display: inline-block; flex: none; color: var(--text); vertical-align: middle; }
+.hence-load__g { transform-origin: 12px 12px; }
+.hence-load--spin .hence-load__g { animation: hence-load-spin .85s linear infinite; }
+@keyframes hence-load-spin { to { transform: rotate(360deg); } }
+
+/* pulse: the three dots breathe in ∴ sequence (top → bottom-left → bottom-right) */
+.hence-load--pulse circle { transform-box: fill-box; transform-origin: center; animation: hence-load-pulse 1s ease-in-out infinite; }
+.hence-load--pulse circle:nth-child(2) { animation-delay: .15s; }
+.hence-load--pulse circle:nth-child(3) { animation-delay: .30s; }
+@keyframes hence-load-pulse { 0%, 100% { opacity: .32; transform: scale(.78); } 50% { opacity: 1; transform: scale(1); } }
+
+/* centred full-panel loader */
+.hence-panel-load { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 120px; padding: 26px 16px; color: var(--dim); }
+.hence-panel-load--fill { flex: 1; min-height: 0; height: 100%; }
+.hence-panel-load__l { font-size: 12px; color: var(--dimmer); letter-spacing: .01em; }
+.route-fallback { min-height: 70vh; }
+
+/* ---- skeleton shimmer ----------------------------------------------------- */
+.skeleton { display: block; background: linear-gradient(90deg, var(--panel-2) 25%, var(--elevated) 50%, var(--panel-2) 75%); background-size: 200% 100%; animation: skeleton-shine 1.3s linear infinite; }
+@keyframes skeleton-shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton-text { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+/* an inline skeleton pill sized to a number/label, so a cell never flashes 0 / — */
+.skeleton--inline { display: inline-block; vertical-align: middle; min-width: 34px; height: .78em; border-radius: 5px; }
+
+/* ---- stale-while-revalidate hint ------------------------------------------ */
+.hence-refresh { color: var(--dimmer); opacity: .85; }
+/* dim a whole region while its cached content is being revalidated */
+.is-revalidating { opacity: .6; transition: opacity .2s var(--ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hence-load--spin .hence-load__g { animation-duration: 2.2s; }
+  .hence-load--pulse circle { animation: none; opacity: .7; }
+  .skeleton { animation-duration: 2.6s; }
+}

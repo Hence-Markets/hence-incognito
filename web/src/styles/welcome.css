@@ -1,0 +1,1070 @@
+/* =========================================================
+   Hence ONBOARDING flow — screens/welcome.js
+   All classes prefixed .welcome-
+   ========================================================= */
+
+.welcome {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+/* shared warm peach→lavender gradient heading word */
+.welcome-grad {
+  background: linear-gradient(95deg, #9aa0f0, #c9b6e8 38%, #f4c39a 78%, #f6e7d6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcome-h {
+  font-size: clamp(26px, 3.2vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-align: center;
+  line-height: 1.1;
+}
+.welcome-sub {
+  margin: 14px auto 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--dim);
+  text-align: center;
+}
+.welcome-sub b { color: var(--text); font-weight: 600; }
+
+/* soft top glow used on signup/inbox/testimonials */
+.welcome-glow {
+  position: absolute;
+  top: -6%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 520px;
+  height: 620px;
+  background: radial-gradient(closest-side, rgba(120,120,140,.10), transparent 70%);
+  filter: blur(30px);
+  pointer-events: none;
+  z-index: 0;
+}
+.welcome-glow--low { top: 8%; opacity: .7; }
+
+/* close X — top-left */
+.welcome-close {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  z-index: 10;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.welcome-close:hover { background: var(--hover); color: var(--text); }
+
+/* sign out — top-left (testimonials) */
+.welcome-signout {
+  position: fixed;
+  top: 16px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--dim);
+  z-index: 10;
+}
+.welcome-signout__em { color: var(--dimmer); }
+
+/* ======================= STEP 1 — Access pass ======================= */
+.welcome-pass {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+.welcome-lanyard {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 320px;
+  background: linear-gradient(180deg, #0a0a0b, #161616);
+}
+.welcome-card3d {
+  position: absolute;
+  top: 320px;
+  left: 50%;
+  transform: translateX(-50%) perspective(900px) rotateX(7deg) rotateY(-9deg) rotateZ(1.5deg);
+  width: 210px;
+  height: 290px;
+  border-radius: 14px;
+  background:
+    radial-gradient(120% 80% at 50% 20%, rgba(244,170,110,.06), transparent 60%),
+    linear-gradient(155deg, #1c1d22, #0d0e11 65%);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 40px 80px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 56px;
+}
+.welcome-card3d::before {
+  /* lanyard slot */
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 34px;
+  height: 8px;
+  border-radius: 5px;
+  background: #050506;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.8);
+}
+.welcome-card3d__mark {
+  color: #2c2d33;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,.04));
+}
+.welcome-card3d__title {
+  margin-top: 70px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  color: #c8835a;
+}
+.welcome-card3d__foot {
+  margin-top: auto;
+  margin-bottom: 18px;
+  font-size: 10px;
+  font-weight: 600;
+  font-style: italic;
+  color: var(--dimmer);
+}
+.welcome-pass__hit {
+  position: absolute;
+  inset: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ======================= STEP 2-5 — Signup / Inbox ======================= */
+.welcome-signup {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  padding: 0 20px;
+}
+.welcome-emailrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 32px auto 0;
+  max-width: 320px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 6px 5px 18px;
+}
+.welcome-email {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13.5px;
+  height: 32px;
+}
+.welcome-email::placeholder { color: var(--dimmer); }
+.welcome-email--done { text-align: left; font-size: 13.5px; }
+.welcome-emailrow.is-done .welcome-email--done { color: var(--up); }
+
+.welcome-arrow {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: none;
+  border: 1px solid var(--line-2);
+  color: var(--dim);
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.welcome-arrow:hover { background: var(--hover); color: var(--text); }
+.welcome-arrow[data-loading] { border-color: transparent; }
+
+.welcome-check {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(95,207,145,.4);
+  color: var(--up);
+}
+
+.welcome-spin {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.18);
+  border-top-color: rgba(255,255,255,.7);
+  animation: welcomeSpin .7s linear infinite;
+}
+@keyframes welcomeSpin { to { transform: rotate(360deg); } }
+
+.welcome-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 22px auto 0;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.welcome-g { display: block; }
+
+.welcome-back {
+  display: block;
+  margin: 22px auto 0;
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+.welcome-back:hover { color: var(--text); }
+
+.welcome-tos {
+  position: fixed;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--dim);
+}
+.welcome-tos b { color: var(--text); font-weight: 600; }
+
+/* ======================= STEP 6 — Splash ======================= */
+.welcome-splash {
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+}
+.welcome-splash__mark {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  filter: drop-shadow(0 0 40px rgba(255,255,255,.06));
+  animation: welcomePulse 2.4s ease-in-out infinite;
+}
+@keyframes welcomePulse { 0%,100% { opacity: .92; } 50% { opacity: 1; } }
+
+/* ======================= STEP 7 — Testimonials ======================= */
+.welcome-test {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1000px;
+  padding: 0 24px;
+  text-align: center;
+}
+.welcome-cards {
+  display: flex;
+  gap: 16px;
+  margin: 40px auto 0;
+  justify-content: center;
+  align-items: stretch;
+}
+.welcome-tcard {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 230px;
+  text-align: left;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.welcome-tcard.is-edge { opacity: .5; }
+.welcome-tcard__head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.welcome-av {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--av) 88%, #fff), var(--av));
+}
+.welcome-tcard__id { min-width: 0; }
+.welcome-tcard__name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.welcome-vf {
+  display: inline-grid;
+  place-items: center;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+}
+.welcome-tcard__role { font-size: 10px; color: var(--dimmer); margin-top: 1px; }
+.welcome-tcard__q { font-size: 11.5px; line-height: 1.55; color: var(--dim); }
+
+.welcome-setup {
+  margin: 34px auto 0;
+  padding: 11px 22px;
+  border-radius: 999px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s var(--ease);
+}
+.welcome-setup:hover { background: var(--hover); }
+.welcome-setupnote { margin-top: 14px; font-size: 11px; color: var(--dimmer); }
+
+/* ======================= keyboard illustration ======================= */
+.welcome-kbd {
+  margin: 56px auto 0;
+  width: min(560px, 92vw);
+  padding: 10px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #141519, #0d0e11);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 20px 50px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.welcome-krow { display: flex; gap: 4px; }
+.welcome-key {
+  flex: var(--kw, 1) 1 0;
+  height: 26px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #1a1b20, #131419);
+  border: 1px solid rgba(255,255,255,.05);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: var(--dimmer);
+}
+.welcome-key.is-lit-blue {
+  background: linear-gradient(180deg, #1c2440, #141a33);
+  border-color: var(--blue);
+  color: #aeb8f5;
+  box-shadow: 0 0 0 1px rgba(91,108,240,.5), 0 0 14px rgba(91,108,240,.25);
+}
+.welcome-key--cmd { font-size: 8px; }
+
+/* ======================= STEP 8 — Command ======================= */
+.welcome-cmd {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+}
+.welcome-cmd.is-dim .welcome-h,
+.welcome-cmd.is-dim .welcome-sub,
+.welcome-cmd.is-dim .welcome-kbd { opacity: .35; filter: blur(.5px); }
+.welcome-cmd__hit {
+  position: absolute;
+  inset: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* onboarding ⌘K finale — the single "you're in" hub both paths land on */
+.welcome-cmd__cta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 30px;
+}
+.welcome-cmd__cta .welcome-setup { margin-top: 0; }
+.welcome-cmd--hub .welcome-kbd { margin-top: 32px; }
+/* the little bottom-right "?" the copy points at */
+.welcome-q {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: -3px;
+  margin: 0 1px;
+}
+.welcome-q::before { content: "?"; }
+
+.welcome-kc {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  color: var(--dim);
+  vertical-align: middle;
+}
+.welcome-kc--blue {
+  background: rgba(91,108,240,.14);
+  border-color: rgba(91,108,240,.5);
+  color: #aeb8f5;
+}
+
+/* command palette (shared shell) */
+.welcome-pal {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 92vw);
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  box-shadow: 0 40px 90px rgba(0,0,0,.65);
+  overflow: hidden;
+  padding-bottom: 6px;
+}
+.welcome-pal--seek,
+.welcome-pal--ready { top: 56%; }
+
+.welcome-pal__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.welcome-pal__crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--dim);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 5px 9px;
+}
+.welcome-pal__hint { font-size: 11px; color: var(--dimmer); }
+.welcome-pal__hint .welcome-kc { margin-left: 4px; }
+
+.welcome-pal__group {
+  padding: 12px 16px 6px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--dimmer);
+}
+.welcome-pal__row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.welcome-pal__row.is-on {
+  background: var(--hover);
+  color: var(--text);
+  border-radius: 8px;
+  margin: 0 6px;
+  width: calc(100% - 12px);
+  padding: 9px 10px;
+}
+.welcome-pal__row.is-muted { color: var(--dimmer); cursor: default; }
+.welcome-pal__ic { display: inline-grid; place-items: center; color: inherit; }
+.welcome-pal__combo { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: 11px; }
+
+/* search input bar — sits just below the palette, like the screenshots */
+.welcome-pal__search {
+  margin: 8px 0 -6px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.welcome-pal__search input {
+  width: 100%;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+}
+.welcome-pal__search input::placeholder { color: var(--dimmer); }
+
+/* seek rows */
+.welcome-pal__srow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 16px;
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.welcome-pal__srow.is-on { background: var(--hover); color: var(--text); }
+.welcome-pal__srow b { color: var(--text); font-weight: 600; }
+.welcome-pal__nm { color: var(--dim); }
+.welcome-pal__ex {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--dimmer);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+
+/* ======================= tutorial sub-views ======================= */
+.welcome-tut {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+}
+.welcome-tut--dim .welcome-h,
+.welcome-tut--dim .welcome-sub { opacity: .4; }
+.welcome-act {
+  margin-top: 26px;
+  font-size: 15px;
+  color: var(--text);
+  text-align: center;
+}
+.welcome-act .welcome-kc { margin: 0 3px; }
+.welcome-link {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ticker chip */
+.welcome-chip {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lc, #3f3f46);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* hands demo (two overlapping panels) */
+.welcome-demo {
+  position: relative;
+  margin: 46px auto 0;
+  width: min(720px, 94vw);
+  height: 220px;
+}
+.welcome-demo__list {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  width: 360px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  opacity: .55;
+}
+.welcome-dl__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.welcome-dl__row b { color: var(--text); font-weight: 600; }
+.welcome-dl__row.is-sel { background: var(--hover); }
+.welcome-demo__pal {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 360px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.5);
+  padding: 8px;
+}
+.welcome-demo__crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--dim);
+  padding: 6px 8px;
+}
+.welcome-demo__cap { padding: 8px 10px 4px; font-size: 10px; color: var(--dimmer); }
+.welcome-demo__cmd {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.welcome-demo__cmd .welcome-kc { margin-left: auto; }
+.welcome-demo__ci { color: var(--dimmer); }
+
+/* seek: international keyboard link */
+.welcome-intl {
+  position: fixed;
+  top: 16px;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--dim);
+  z-index: 10;
+}
+
+/* cursor: fixed toast + dock */
+.welcome-toast-fixed {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text);
+  z-index: 10;
+}
+.welcome-toast-fixed svg:last-child { margin-left: 6px; color: var(--dim); }
+
+.welcome-dockwrap {
+  position: relative;
+  margin: 44px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.welcome-dock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.welcome-dock__i {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+}
+.welcome-dock__i.is-on { background: var(--hover); color: var(--text); }
+.welcome-dock__search { position: relative; }
+.welcome-dock__sbtn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  cursor: pointer;
+}
+.welcome-dock__stip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 7px 11px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+.welcome-cursor {
+  position: absolute;
+  bottom: -4px;
+  right: -10px;
+  color: var(--text);
+  transform: rotate(8deg);
+  pointer-events: none;
+}
+
+/* ready palette extra row */
+.welcome-pal__row--ready { padding-right: 14px; }
+
+/* ---- feature slides (tutorial: pulse / beliefs / venues / radar) ---- */
+.welcome-ft {
+  margin-top: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.welcome-ftrow {
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.welcome-ftcard {
+  width: min(440px, 92vw);
+  text-align: left;
+  background: var(--elevated);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, .45);
+}
+.welcome-ftcard--half { width: min(240px, 92vw); }
+.welcome-ftcard--dim { opacity: .55; box-shadow: none; background: var(--panel); }
+.welcome-ftcap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--dimmer);
+  margin-bottom: 10px;
+}
+.welcome-ftdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--up);
+  box-shadow: 0 0 8px rgba(95, 207, 145, .7);
+}
+.welcome-ftbody { font-size: 13px; line-height: 1.7; color: var(--dim); }
+.welcome-ftbody b { color: var(--text); font-weight: 600; }
+.welcome-fttick {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px 1px 3px;
+  margin: 0 2px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.welcome-ftup { color: var(--up); }
+.welcome-ftdn { color: var(--down); }
+.welcome-ftfoot {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--dimmer);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* reaction rail (beliefs slide) */
+.welcome-ftrail { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.welcome-ftbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-2);
+  color: var(--dim);
+  font-size: 11.5px;
+}
+.welcome-ftbtn.is-hot {
+  border-color: rgba(95, 207, 145, .45);
+  color: var(--up);
+  background: rgba(95, 207, 145, .07);
+}
+/* ∴ divider between the reaction card and the thesis card */
+.welcome-ftvia {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--dimmer);
+  font-size: 12px;
+}
+.welcome-ftvia::before, .welcome-ftvia::after {
+  content: '';
+  width: 46px;
+  height: 1px;
+  background: var(--line-2);
+}
+/* key/value rows (order ticket + dim feed) */
+.welcome-ftkv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 12.5px;
+  color: var(--dim);
+  border-bottom: 1px solid var(--line);
+}
+.welcome-ftkv:last-child { border-bottom: none; }
+.welcome-ftkv b { color: var(--text); font-weight: 600; }
+.welcome-ftcta {
+  margin-top: 12px;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 9px 0;
+  border-radius: 10px;
+  background: rgba(95, 207, 145, .14);
+  border: 1px solid rgba(95, 207, 145, .4);
+  color: var(--up);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+/* prediction odds bars */
+.welcome-ftodds { display: flex; gap: 8px; margin-top: 12px; }
+.welcome-ftodd {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.welcome-ftodd--yes { background: rgba(95, 207, 145, .12); border: 1px solid rgba(95, 207, 145, .35); color: var(--up); }
+.welcome-ftodd--no { background: rgba(240, 141, 131, .08); border: 1px solid rgba(240, 141, 131, .28); color: var(--down); }
+/* signals scoreboard rows */
+.welcome-ftsig {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--dim);
+}
+.welcome-ftsig:last-child { border-bottom: none; }
+.welcome-ftsig b { color: var(--text); font-weight: 600; }
+.welcome-ftsig .welcome-av { width: 24px; height: 24px; font-size: 11px; }
+.welcome-ftret {
+  margin-left: auto;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+.welcome-ftret--up { color: var(--up); background: rgba(95, 207, 145, .1); }
+.welcome-ftret--dn { color: var(--down); background: rgba(240, 141, 131, .09); }
+
+/* ---- YOUR pass (post-onboarding reveal) ---- */
+.welcome-mypass {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 20px 40px;
+}
+/* the demo card is absolutely-positioned under a lanyard; yours flows in-page */
+.welcome-card3d--mine {
+  position: static;
+  transform: perspective(900px) rotateX(6deg) rotateY(-7deg) rotateZ(1deg);
+  margin: 30px 0 6px;
+  transition: transform .35s var(--ease);
+}
+.welcome-card3d--mine:hover { transform: perspective(900px) rotateX(2deg) rotateY(-2deg); }
+.welcome-card3d--mine .welcome-card3d__title {
+  margin-top: 54px;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+  max-width: 88%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: linear-gradient(95deg, #f0a868, #f6cba2 50%, #f6e7d6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.welcome-mypass__sub {
+  margin-top: 5px;
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  color: #c8835a;
+}
+.welcome-mypass__chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 0 14px;
+}
+.welcome-mypass__chips span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .03);
+  font-size: 8.5px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.welcome-mypass__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 26px;
+}
+.welcome-mypass__actions .welcome-ftbtn {
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.welcome-mypass__actions .welcome-ftbtn:hover { background: var(--hover); color: var(--text); }
+.welcome-mypass .welcome-setup { margin-top: 0; }
+
+/* ---- calibration mini-game ---- */
+.welcome-calib { width: min(360px, 92vw); }
+.welcome-calib__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.welcome-calib__sym { font-size: 17px; color: var(--text); }
+.welcome-calib__px {
+  margin-left: auto;
+  font-size: 15px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.welcome-calib__q {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--dimmer);
+}
+.welcome-calib__btn {
+  cursor: pointer;
+  font-family: inherit;
+  transition: filter .15s var(--ease);
+}
+.welcome-calib__btn:hover { filter: brightness(1.25); }
+.welcome-calib__btn:disabled { opacity: .4; cursor: default; filter: none; }
+.welcome-calib__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+.welcome-calib__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+.welcome-calib__dot.is-done { background: var(--up); }
+.welcome-calib__dot.is-cur { background: var(--text); }
+.welcome-calib__done {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--up);
+}
+
+/* ---- first-setup finale buttons ---- */
+.welcome-setupbtn { cursor: pointer; font-family: inherit; transition: background .15s var(--ease), color .15s var(--ease); }
+.welcome-setupbtn:hover { background: var(--hover); color: var(--text); }
+
+@media (max-width: 720px) {
+  .welcome-cards { flex-wrap: wrap; }
+  .welcome-tcard { max-width: none; flex: 1 1 45%; }
+  .welcome-tcard.is-edge { display: none; }
+  .welcome-demo__list { display: none; }
+  .welcome-demo__pal { position: relative; width: 100%; }
+  .welcome-ftrow { flex-direction: column; align-items: center; }
+  .welcome-ftcard--half { width: min(440px, 92vw); }
+}

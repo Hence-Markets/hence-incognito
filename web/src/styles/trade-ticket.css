@@ -1,0 +1,77 @@
+/* =========================================================================
+   Trade ticket — bottom-anchored dock surface (mirrors the Ask-Hence panel).
+   ========================================================================= */
+.tt-wrap {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 61; width: min(420px, calc(100vw - 24px));
+}
+.tt {
+  background: rgba(20,21,25,0.92); border: 1px solid var(--line-2);
+  backdrop-filter: blur(18px) saturate(150%);
+  box-shadow: 0 22px 54px -16px rgba(0,0,0,0.8);
+  border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 9px;
+  position: relative;                 /* anchor the leverage popup + backdrop */
+  animation: tt-bloom .22s var(--ease);
+}
+@keyframes tt-bloom { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+
+.tt__head { display: flex; align-items: center; gap: 9px; padding: 2px 2px 4px; }
+.tt__id { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.tt__id b { font-size: 14px; color: var(--text); }
+.tt__id span { font-size: 11px; color: var(--dimmer); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tt__mark { margin-left: auto; font-size: 13.5px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.tt__x { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: var(--dim); background: none; }
+.tt__x:hover { background: var(--hover); color: var(--text); }
+
+.tt__side { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.tt__sidebtn { padding: 9px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--dim); background: var(--panel-2); border: 1px solid var(--line-2); transition: all .12s; }
+.tt__sidebtn.buy.on { background: var(--up-bg); color: var(--up); border-color: var(--up); }
+.tt__sidebtn.sell.on { background: var(--down-bg); color: var(--down); border-color: var(--down); }
+
+.tt__row { display: flex; align-items: center; gap: 7px; }
+.tt__seg { display: inline-flex; gap: 2px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 3px; }
+.tt__seg button { padding: 5px 13px; border-radius: 999px; font-size: 12px; color: var(--dim); }
+.tt__seg button.on { background: var(--elevated); color: var(--text); }
+.tt__limit { flex: 1; min-width: 0; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 11px; color: var(--text); font-size: 13px; outline: none; }
+
+.tt__amt { display: flex; align-items: center; gap: 6px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 12px; padding: 10px 13px; }
+.tt__amt-cur { font-size: 18px; color: var(--dim); }
+.tt__amt-in { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text); font-size: 20px; font-weight: 600; font-family: inherit; }
+.tt__amt-in::placeholder { color: var(--dimmer); }
+.tt__amt-est { font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.tt__chips { display: flex; gap: 6px; }
+.tt__chips button { flex: 1; padding: 6px; border-radius: 8px; font-size: 12px; color: var(--dim); background: var(--panel-2); border: 1px solid var(--line-2); transition: all .12s; }
+.tt__chips button:hover { background: var(--hover); color: var(--text); }
+
+/* leverage: a compact "N×" button inline with Market/Limit that opens a slider sheet
+   (same pattern + design as the main trading terminal's Adjust Leverage popup) */
+.tt__levbtn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; transition: border-color .12s; font-variant-numeric: tabular-nums; }
+.tt__levbtn:hover { border-color: var(--line-3, var(--line)); }
+.tt__levpop-bd { position: absolute; inset: 0; z-index: 8; border-radius: inherit; }
+.tt__levpop { position: absolute; z-index: 9; left: 14px; right: 14px; top: 52px; padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); box-shadow: 0 18px 48px rgba(0,0,0,.5); display: flex; flex-direction: column; gap: 10px; }
+.tt__levpop-h { display: flex; align-items: center; justify-content: space-between; }
+.tt__levpop-h b { font-size: 13.5px; color: var(--text); }
+.tt__levpop-h button { background: transparent; border: 0; color: var(--dimmer); cursor: pointer; padding: 2px; }
+.tt__levpop-h button:hover { color: var(--text); }
+.tt__levpop-row { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--dim); }
+.tt__levpop-row b { color: var(--text); }
+.tt__levpop-slide { display: flex; align-items: center; gap: 10px; }
+.tt__lev-slider { flex: 1 1 auto; min-width: 0; accent-color: var(--up); height: 3px; cursor: pointer; }
+.tt__levpop-num { width: 52px; padding: 7px 0; text-align: center; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 13px; font-weight: 700; }
+.tt__levpop-sub { font-size: 10.5px; color: var(--dimmer); }
+.tt__levpop-cta { padding: 10px 0; border-radius: 9px; border: 0; background: var(--text); color: var(--bg-2); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+
+.tt__go { display: grid; place-items: center; height: 42px; border-radius: 12px; font-size: 14.5px; font-weight: 650; color: var(--bg-2); transition: filter .12s, opacity .12s; }
+.tt__go.buy { background: var(--up); }
+.tt__go.sell { background: var(--down); }
+.tt__go:hover:not(:disabled) { filter: brightness(1.06); }
+.tt__go:disabled { opacity: .7; cursor: default; }
+.tt__foot { font-size: 10.5px; color: var(--dimmest); text-align: center; }
+
+@media (prefers-reduced-motion: reduce) { .tt { animation: none; } }
+@media (max-width: 760px) { .tt-wrap { width: calc(100vw - 20px); bottom: 12px; } }
+
+/* margin shortfall: same rule as the terminal (lib/thesis-sizing), compact form */
+.tt__warn{margin:2px 0 6px;text-align:center;font-size:11.5px;color:var(--amber,#fbbf24);
+  font-variant-numeric:tabular-nums}

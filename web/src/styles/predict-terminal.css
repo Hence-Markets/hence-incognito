@@ -1,0 +1,119 @@
+/* =========================================================
+   predict-terminal.css — prediction-mode overrides for the shared terminal shell.
+   The layout, panels, resize handles, ticket frame, bottom table etc. all come
+   from terminal.css; this only adds the YES/NO-specific colour + the prediction
+   panels (related markets, probability chart, YES/NO book, positions).
+   ========================================================= */
+
+/* trending pills in the fav bar carry a (truncated) question, not a ticker */
+.term__fav .pt-fav-i { max-width: 210px; gap: 6px; }
+.pt-fav-q { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* prediction ticker marquee — reuses the perp .term__tape scroll animation. Items are
+   buttons (client-side nav), so reset the native button chrome; questions truncate. */
+.term__tape button.term__tape-i { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+.pt-tape-q { max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-tape-ic { width: 15px; height: 15px; border-radius: 4px; object-fit: cover; flex: none; background: var(--panel-2); }
+
+/* related-markets panel (left) — reuses .term__news chrome. Icon + text block, like the tape. */
+.pt-rel {
+  display: flex; flex-direction: row; align-items: flex-start; gap: 9px; width: 100%; text-align: left;
+  padding: 10px 14px; border-bottom: 1px solid var(--line); background: transparent;
+  border-left: 2px solid transparent; cursor: pointer; transition: background .12s var(--ease);
+}
+.pt-rel:hover { background: var(--hover); }
+.pt-rel.on { background: var(--elevated); border-left-color: var(--peach); }
+.pt-rel-ic { width: 26px; height: 26px; border-radius: 7px; object-fit: cover; flex: none; background: var(--panel-2); margin-top: 1px; }
+.pt-rel-ic--ph { display: inline-grid; place-items: center; color: var(--dimmer); font-size: 12px; }
+.pt-rel-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.pt-rel-q { font-size: 12px; line-height: 1.4; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.pt-rel-meta { display: flex; align-items: center; justify-content: space-between; }
+.pt-rel-p { font-size: 12px; font-weight: 700; }
+.pt-rel-v { font-size: 10.5px; color: var(--dimmer); }
+
+/* market header pair button holds the long question */
+.pt-pair { max-width: 52%; }
+.pt-pair-ic { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; flex: none; background: var(--panel-2); }
+.pt-pair-ic--ph { display: inline-grid; place-items: center; color: var(--dimmer); font-size: 12px; }
+.pt-pair-q { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* YES/NO toggle in the chart toolbar */
+.pt-outcomes { display: inline-flex; gap: 6px; margin-left: auto; }
+.pt-out { padding: 5px 12px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--dim); font-size: 11.5px; font-weight: 600; cursor: pointer; transition: all .12s var(--ease); }
+.pt-out--yes.on { background: rgba(95,207,145,.14); border-color: rgba(95,207,145,.5); color: var(--up); }
+.pt-out--no.on { background: rgba(240,141,131,.12); border-color: rgba(240,141,131,.45); color: var(--down); }
+
+.pt-chart-wrap { flex: 1; min-height: 0; padding: 8px 12px 12px; display: flex; }
+/* lightweight-charts host — fills the wrap; the legend floats over it */
+.pt-chart-canvas { position: relative; flex: 1; min-height: 0; width: 100%; }
+.pt-chart-host { position: absolute; inset: 0; }
+.pt-chart-legend { position: absolute; top: 6px; left: 8px; display: flex; align-items: baseline; gap: 7px; pointer-events: none; z-index: 2; }
+.pt-chart-legend b { font-size: 15px; font-weight: 700; }
+.pt-chart-legend span { font-size: 10.5px; color: var(--dimmer); text-transform: uppercase; letter-spacing: .04em; }
+.pt-chart-load { position: absolute; inset: 0; display: grid; place-items: center; }
+
+/* Chart ⇄ Description toggle (trade.xyz / reference anatomy) */
+.pt-view-tabs { display: inline-flex; gap: 2px; margin-left: auto; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 9px; padding: 2px; }
+.pt-view-tabs button { padding: 4px 12px; border: 0; background: none; color: var(--dim); font-size: 11.5px; font-weight: 600; border-radius: 7px; cursor: pointer; transition: all .12s var(--ease); }
+.pt-view-tabs button:hover { color: var(--text); }
+.pt-view-tabs button.on { background: var(--elevated); color: var(--text); }
+.pt-view-title { font-size: 12px; font-weight: 600; color: var(--text); }
+
+/* Description view (replaces the cramped bottom text) */
+.pt-desc-view { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 18px; }
+.pt-desc-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+.pt-desc-metric { display: flex; flex-direction: column; gap: 3px; }
+.pt-desc-metric span { font-size: 10.5px; color: var(--dimmer); text-transform: uppercase; letter-spacing: .04em; }
+.pt-desc-metric b { font-size: 13px; color: var(--text); }
+.pt-desc-h { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: var(--text); }
+.pt-desc-body { font-size: 12.5px; line-height: 1.65; color: var(--dim); }
+.pt-desc-body p { margin: 0 0 12px; }
+.pt-desc-body a { color: var(--peach); text-decoration: none; word-break: break-all; }
+.pt-desc-body a:hover { text-decoration: underline; }
+.pt-desc-empty { color: var(--dimmer); }
+
+/* Book ⇄ Trades tabs + trades tape */
+.pt-book-tabs { display: flex; border-bottom: 1px solid var(--line); }
+.pt-book-tabs button { flex: none; padding: 9px 14px; border: 0; background: none; color: var(--dim); font-size: 11.5px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.pt-book-tabs button:hover { color: var(--text); }
+.pt-book-tabs button.on { color: var(--text); border-bottom-color: var(--peach); }
+.pt-trades-head { grid-template-columns: 1fr 1fr 1.2fr 0.8fr; }
+.pt-trade-row { display: grid; grid-template-columns: 1fr 1fr 1.2fr 0.8fr; padding: 3px 14px; font-size: 11.5px; }
+.pt-trade-row > span:not(:first-child) { text-align: right; }
+.pt-trade-row > span:nth-child(3) { text-align: right; font-size: 10.5px; }
+.pt-trade-row .r { text-align: right; }
+.pt-trade-row .muted { color: var(--dimmer); }
+.pt-trade-row:hover { background: var(--hover); }
+
+/* YES/NO order book (reuses .term__book column frame) */
+.pt-book { display: flex; flex-direction: column; }
+.pt-book-h { padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--dim); font-weight: 600; }
+.pt-book-head { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 5px 14px; font-size: 10px; color: var(--dimmer); text-transform: uppercase; letter-spacing: .05em; }
+.pt-book-body { flex: 1; overflow-y: auto; }
+.pt-book-row { position: relative; display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 3px 14px; font-size: 11.5px; cursor: pointer; }
+.pt-book-row > span { position: relative; z-index: 1; }
+.pt-book-row > span:not(:first-child) { text-align: right; }
+.pt-book-row .muted { color: var(--dimmer); }
+.pt-book-row::before { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: var(--d, 0%); opacity: .12; }
+.pt-book-ask::before { background: var(--down); }
+.pt-book-bid::before { background: var(--up); }
+.pt-book-row:hover { background: var(--hover); }
+.pt-book-spread { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--text); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.pt-book-spread span { font-size: 10px; font-weight: 500; color: var(--dimmer); }
+
+/* YES/NO ticket side tabs (reuse .term__ls frame) */
+.pt-ls-yes.on { color: var(--up); box-shadow: inset 0 -2px 0 var(--up); }
+.pt-ls-no.on { color: var(--down); box-shadow: inset 0 -2px 0 var(--down); }
+.pt-submit--yes { background: var(--up); color: #07120c; }
+.pt-submit--no { background: var(--down); color: #150806; }
+
+/* account card tweaks + positions table link rows */
+.pt-acct .term__ac-chg.down { color: var(--down); }
+.pt-bottom-note { font-size: 10.5px; color: var(--dimmer); }
+.pt-ptable td.pt-pt-q { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pt-ptable tr.is-link { cursor: pointer; }
+.pt-ptable tr.is-link:hover td { background: var(--hover); }
+
+@media (max-width: 900px) {
+  .pt-pair { max-width: 60vw; }
+}

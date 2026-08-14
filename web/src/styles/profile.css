@@ -1,0 +1,55 @@
+/* =========================================================================
+   Public profile — a trader's page. The portfolio below the header is
+   PortfolioView (portfolio.css); only the identity block lives here.
+   ========================================================================= */
+.prof { padding: 22px 20px 96px; max-width: 1180px; margin: 0 auto; }
+
+/* the fixed WalletChip lives top-right; reserve room or Follow/Share render underneath it */
+.prof__head { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; padding-right: 190px; }
+.prof__avatar { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--panel-2); border: 1px solid var(--line-2); color: var(--dim); overflow: hidden; flex: none; }
+.prof__avatar img { width: 100%; height: 100%; object-fit: cover; }
+.prof__id { min-width: 0; }
+.prof__id h2 { margin: 0; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
+.prof__sub { font-size: 12px; color: var(--dimmer); font-variant-numeric: tabular-nums; }
+
+.prof__acts { margin-left: auto; display: flex; gap: 8px; flex: none; }
+.prof__act { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 550; padding: 7px 14px; border-radius: 9px; color: var(--dim); background: var(--panel-2); border: 1px solid var(--line-2); }
+.prof__act:hover:not(:disabled) { color: var(--text); background: var(--hover); }
+.prof__act--pri { background: var(--text); color: var(--bg); border-color: transparent; font-weight: 650; }
+.prof__act--pri:hover:not(:disabled) { opacity: .88; }
+.prof__act:disabled { opacity: .6; }
+
+/* the record — what we actually measure, in place of a rating */
+.prof__record { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.prof__stat { display: flex; flex-direction: column; gap: 2px; padding: 10px 15px; min-width: 92px; border-radius: 11px; background: var(--panel); border: 1px solid var(--line); }
+.prof__stat b { font-size: 17px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.prof__stat span { font-size: 10.5px; color: var(--dimmer); text-transform: uppercase; letter-spacing: .05em; }
+
+.prof__walletonly { display: flex; align-items: center; gap: 7px; padding: 10px 13px; margin-bottom: 14px; border-radius: 10px; font-size: 12px; color: var(--dim); background: var(--panel); border: 1px solid var(--line); }
+.prof__note { margin-top: 14px; font-size: 12.5px; color: var(--dimmer); text-align: center; }
+
+.prof__empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 72px 20px; color: var(--dim); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.prof__empty b { color: var(--text); font-size: 14px; }
+.prof__empty p { margin: 0; font-size: 12.5px; max-width: 360px; line-height: 1.55; }
+.prof__cta { margin-top: 6px; height: 34px; display: inline-flex; align-items: center; padding: 0 18px; border-radius: 9px; background: var(--text); color: var(--bg); font-size: 12.5px; font-weight: 650; text-decoration: none; }
+
+@media (max-width: 760px) {
+  .prof { padding: 18px 12px 96px; }
+  .prof__head { flex-wrap: wrap; padding-right: 0; }
+  .prof__acts { margin-left: 0; width: 100%; }
+  .prof__act { flex: 1; justify-content: center; }
+  .prof__stat { flex: 1 1 28%; min-width: 0; padding: 9px 11px; }
+}
+
+/* The rating band. Deliberately quiet: even "established" is a muted chip, not a trophy —
+   this is a claim about a track record, and it should read as information rather than status.
+   There is no red variant, because there is no public negative label. */
+.prof__band{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;
+  margin-left:8px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:600;
+  letter-spacing:.01em;white-space:nowrap;
+  background:var(--surface-2,#16181d);color:var(--text-2,#9aa0aa);
+  border:1px solid var(--border,#23262d)}
+.prof__band em{font-style:normal;opacity:.62;font-weight:500}
+.prof__band--established{color:#8fd3a8;border-color:#264a35;background:#111c15}
+.prof__band--tracking{color:#8fb4d3;border-color:#24384a;background:#111820}
+.prof__band--emerging{color:#c8b98f;border-color:#463f26;background:#1b1811}

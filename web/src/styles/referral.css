@@ -1,0 +1,45 @@
+/* =========================================================================
+   Referral screen — invite link + referral graph w/ quality signals
+   ========================================================================= */
+.rfl { max-width: 640px; margin: 0 auto; padding: 26px 22px 60px; }
+.rfl__head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; padding-right: 132px; }
+.rfl__head h2 { font-size: 20px; font-weight: 650; margin: 0; }
+.rfl__sub { font-size: 12.5px; color: var(--dim); }
+
+.rfl__linkcard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+.rfl__linkrow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rfl__link { flex: 1 1 220px; min-width: 0; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.rfl__act { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 550; color: var(--dim); border: 1px solid var(--line-2); border-radius: 8px; padding: 7px 12px; background: none; flex: none; }
+.rfl__act:hover { color: var(--text); background: var(--hover); }
+.rfl__act--pri { color: var(--bg); background: var(--text); border-color: transparent; }
+.rfl__act--pri:hover { color: var(--bg); background: var(--text); opacity: .9; }
+.rfl__vanity { font-size: 11.5px; color: var(--dimmer); }
+.rfl__vanity b { color: var(--dim); font-weight: 600; }
+
+.rfl__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.rfl__stats > div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rfl__stats span { font-size: 10px; color: var(--dimmer); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.rfl__stats b { font-size: 16px; font-variant-numeric: tabular-nums; }
+
+.rfl__list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.rfl__row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; }
+.rfl__who { font-size: 13px; font-weight: 600; }
+.rfl__when { margin-left: auto; font-size: 11px; color: var(--dimmer); white-space: nowrap; }
+.rfl__chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.rfl__chips em { font-style: normal; font-size: 10px; font-weight: 650; letter-spacing: .03em; text-transform: uppercase; border-radius: 6px; padding: 2px 7px; color: var(--dimmer); background: var(--elevated); }
+.rfl__chips em.on { color: var(--up); background: color-mix(in srgb, var(--up) 12%, transparent); }
+
+.rfl__empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 54px 20px; color: var(--dim); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.rfl__empty b { color: var(--text); font-size: 14px; }
+.rfl__empty p { margin: 0; font-size: 12.5px; max-width: 360px; line-height: 1.55; }
+.rfl__empty--soft { padding: 34px 20px; }
+.rfl__cta { margin-top: 6px; height: 34px; padding: 0 18px; border-radius: 9px; background: var(--text); color: var(--bg); font-size: 12.5px; font-weight: 650; }
+.rfl__loading { display: flex; flex-direction: column; gap: 12px; }
+.rfl__note { margin: 0; font-size: 11px; color: var(--dimmer); line-height: 1.6; }
+
+@media (max-width: 640px) {
+  .rfl { padding: 18px 14px 90px; }
+  .rfl__head { padding-right: 116px; }
+  .rfl__stats { grid-template-columns: repeat(2, 1fr); }
+  .rfl__when { margin-left: 0; width: 100%; }
+}

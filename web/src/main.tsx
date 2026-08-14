@@ -1,58 +1,80 @@
-import { StrictMode } from 'react';
+/* Boot — Hence's, with the Incognito layer in front of it.
+ *
+ * This app is a FORK of the Hence web app, not a lookalike. The terminal, the news feed, the
+ * chart, the order book, the account card and every other screen are the real components, so
+ * "Hence in incognito mode" is literally true rather than an aspiration. Rebuilding that from
+ * scratch was the wrong instinct and produced a hollow shell; this replaces it.
+ *
+ * Three things are layered on top, and nothing else is altered:
+ *   1. the Incognito landing + team gate, in front of the app
+ *   2. data-incognito on <html>, which carries the tint to every surface INCLUDING the modals
+ *      and dock chrome that render outside the .term subtree
+ *   3. the order path, swapped from Hyperliquid to encrypt → submit (see lib/order.ts)
+ */
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PrivyProvider } from '@privy-io/react-auth';
-import { App } from './App';
-import './styles.css';
+import App from './App';
+import { AuthProvider } from './providers/AuthProvider';
+import * as market from './lib/market.js';
+import { initAssetIcons } from './lib/asset-icon.js';
+import { Landing } from './screens/Landing';
+import { checkAccess } from './lib/access';
+import { useAuth } from './hooks/useAuth';
+import './styles/app.css';
+import './styles/loading.css';
+import './styles/mobile.css';
+import './styles/accounts.css';
+import './styles/incognito.css';   // the tint + the panels that differ. Loaded LAST so it wins.
 
-/* Same Privy app as app.hence.markets — that is what makes this the same user and the same
-   embedded wallet. The ID is public by design (it ships in every client bundle), but it is
-   read from env rather than inlined so this repo does not carry it.
-   `incognito.hence.markets` must be added to Privy's allowed origins or login fails. */
-const APP_ID = import.meta.env.VITE_PRIVY_APP_ID ?? '';
+(window as any).henceMarket = market;
+const timeout = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const root = createRoot(document.getElementById('root')!);
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    {APP_ID ? (
-      <PrivyProvider
-        appId={APP_ID}
-        config={{
-          // 'wallet' leads deliberately. The access cohort is a list of REAL wallet addresses,
-          // so an email-only login would mint a fresh embedded wallet whose address is not on
-          // that list — the gate would then deny everyone, including the team.
-          loginMethods: ['wallet', 'email'],
-          appearance: {
-            theme: 'dark',
-            /* 'detected_ethereum_wallets' FIRST, and it is load-bearing rather than tidy:
-               Rabby is an EIP-6963 injected extension with no pinnable entry of its own
-               ('rabby_wallet' exists but is marked deprecated / no longer supported), so this
-               is what surfaces it — along with any other extension a trader already runs.
+// The tint rides on <html> rather than on .term, because Hence renders seven order/confirm
+// modals plus the dock and wallet chrome OUTSIDE the terminal subtree — a class on .term would
+// leave all of them untinted and the mode would look half-applied.
+document.documentElement.setAttribute('data-incognito', '1');
 
-               It also repairs an own goal. Privy's default list is
-               ['detected_wallets','metamask','coinbase_wallet','rainbow','wallet_connect'],
-               and specifying walletList REPLACES that default outright — the previous curated
-               list silently dropped both detected wallets and WalletConnect, which made Rabby
-               impossible to connect at all. */
-            walletList: [
-              'detected_ethereum_wallets',
-              'metamask',
-              'rainbow',
-              'coinbase_wallet',
-              'zerion',
-              'okx_wallet',
-              'wallet_connect',
-            ],
-          },
-          // Still created for email users — and it is also what a shielded address will be
-          // built on, which is why the embedded wallet is never the identity address below.
-          embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
-        }}
-      >
-        <App />
-      </PrivyProvider>
-    ) : (
-      // No app ID = no auth. Render the landing anyway so the disclosure is still reviewable,
-      // but the CTA stays disabled — it must never look like you are signed in when you are not.
-      <App />
-    )}
-  </StrictMode>
-);
+initAssetIcons();
+
+/** Dev-only gate bypass, mirroring the main app's own convention. Compiled out of production. */
+const devNoGate = () => {
+  try {
+    return import.meta.env.DEV && sessionStorage.getItem('hence.devNoGate') === '1';
+  } catch {
+    return false;
+  }
+};
+
+function Gate() {
+  const { ready, authenticated, address, login } = useAuth() as any;
+  const [status, setStatus] = useState<'anon' | 'checking' | 'denied' | 'ready'>('anon');
+  const [entered, setEntered] = useState(devNoGate());
+
+  // Ask the server whether THIS address is in the cohort. The browser never receives the list.
+  if (ready && authenticated && address && status === 'anon') {
+    setStatus('checking');
+    checkAccess(address).then((ok) => setStatus(ok ? 'ready' : 'denied'));
+  }
+
+  if (entered) return <App />;
+
+  return (
+    <Landing
+      status={status}
+      onEnter={() => setEntered(true)}
+      onSignIn={login}
+      shortAddr={address ? `${address.slice(0, 6)}…${address.slice(-4)}` : undefined}
+    />
+  );
+}
+
+(async () => {
+  await Promise.race([market.init(), timeout(3500)]);
+  root.render(
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>,
+  );
+  requestAnimationFrame(() => document.getElementById('boot-splash')?.remove());
+})();

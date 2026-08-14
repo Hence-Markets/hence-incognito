@@ -1,0 +1,83 @@
+/* =========================================================================
+   Run-thesis sheet — the basket ticket. Sits on the trade-ticket surface
+   (.tt-wrap/.tt/.tt__amt/.tt__levpop are imported from trade-ticket.css);
+   only the leg list and the run/partial states are new here.
+   ========================================================================= */
+/* Above the Ask-Hence panel, which is z-index 61 centred / 70 docked / 80 full-screen. The run
+   sheet is usually opened FROM that panel ("Run thesis" on a plan card), so at the ticket's
+   own z-index 61 it opened behind the chat and looked like nothing had happened until the
+   chat was closed. A confirm-and-sign surface must never be the thing that's covered. */
+.rt-wrap { width: min(460px, calc(100vw - 24px)); z-index: 90; }
+.rt { gap: 10px; }
+
+/* Dim whatever is underneath so the sheet reads as the active surface rather than one more
+   floating card. Click-through to close is deliberately NOT wired: mid-run this is the only
+   record of which legs filled. */
+.rt-backdrop { position: fixed; inset: 0; z-index: 89; background: rgba(0,0,0,.5); backdrop-filter: blur(2px); animation: rt-fade .18s var(--ease); }
+@keyframes rt-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .rt-backdrop { animation: none; } }
+
+.rt__dir { margin-left: auto; padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; background: var(--panel-2); color: var(--dim); border: 1px solid var(--line-2); }
+.rt__dir--long { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, transparent); background: var(--up-bg); }
+.rt__dir--short { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, transparent); background: var(--down-bg); }
+
+.rt__chips { flex: 1 1 auto; min-width: 0; }
+
+/* ---- the legs ---- */
+.rt__legs { display: flex; flex-direction: column; gap: 5px; max-height: 42vh; overflow-y: auto; }
+.rt__leg {
+  display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: 10px;
+  background: var(--panel-2); border: 1px solid var(--line-2); font-size: 12.5px;
+  transition: border-color .15s, opacity .15s;
+}
+.rt__leg--skipped { opacity: .62; }
+.rt__leg--placing { border-color: color-mix(in srgb, var(--text) 35%, var(--line-2)); }
+.rt__leg--filled, .rt__leg--resting { border-color: color-mix(in srgb, var(--up) 45%, transparent); background: var(--up-bg); }
+.rt__leg--failed { border-color: color-mix(in srgb, var(--down) 50%, transparent); background: var(--down-bg); }
+
+.rt__legsym { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.rt__legsym b { color: var(--text); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
+.rt__side { padding: 2px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; background: var(--elevated); color: var(--dim); }
+.rt__side--long, .rt__side--yes { color: var(--up); background: var(--up-bg); }
+.rt__side--short, .rt__side--no { color: var(--down); background: var(--down-bg); }
+
+.rt__legusd { margin-left: auto; font-weight: 650; color: var(--text); font-variant-numeric: tabular-nums; }
+.rt__legstat { display: inline-flex; align-items: center; gap: 4px; min-width: 0; font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.rt__legerr { display: inline-flex; align-items: center; gap: 4px; color: var(--down); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 190px; }
+.rt__legskip, .rt__legroute { margin-left: auto; font-size: 11px; color: var(--dimmer); display: inline-flex; align-items: center; gap: 4px; }
+.rt__legroute { color: var(--dim); text-decoration: none; }
+.rt__legroute:hover { color: var(--text); }
+
+/* ---- footnotes + states ---- */
+.rt__meta { font-size: 11px; color: var(--dimmer); font-variant-numeric: tabular-nums; padding: 0 2px; }
+.rt__warn { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--down); padding: 0 2px; }
+
+.rt__partial { display: flex; flex-direction: column; gap: 4px; padding: 10px 11px; border-radius: 10px; background: var(--down-bg); border: 1px solid color-mix(in srgb, var(--down) 40%, transparent); }
+.rt__partial b { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--down); }
+.rt__partial span { font-size: 11.5px; color: var(--dim); line-height: 1.45; }
+
+.rt__doneacts { display: flex; align-items: center; gap: 8px; }
+.rt__retry { flex: 1 1 auto; height: 38px; font-size: 13px; }
+.rt__viewpf { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--dim); text-decoration: none; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--line-2); }
+.rt__viewpf:hover { color: var(--text); background: var(--hover); }
+.rt__close { margin-left: auto; padding: 8px 12px; border-radius: 9px; font-size: 12px; color: var(--dim); background: var(--panel-2); border: 1px solid var(--line-2); }
+.rt__close:hover { color: var(--text); background: var(--hover); }
+
+.rt .tt__go { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+/* A blocked run must LOOK blocked. The shared .tt__go:disabled only dims to .7, which on the
+   green fill still reads as a live button — so a user hitting a pre-flight block taps it,
+   nothing happens, and the sheet seems broken rather than protective. */
+.rt .tt__go:disabled { background: var(--panel-2); color: var(--dimmer); border: 1px solid var(--line-2); opacity: 1; cursor: not-allowed; }
+
+@media (max-width: 760px) {
+  .rt-wrap { width: calc(100vw - 20px); }
+  .rt__legs { max-height: 38vh; }
+  .rt__legerr { max-width: 120px; }
+}
+
+/* the trigger orders a run will place — visible before commit, colour-coded like P&L */
+.rt__legtpsl { display: inline-flex; gap: 6px; margin-left: 8px; font-size: 10.5px;
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rt__legtpsl em { font-style: normal; font-weight: 600; padding: 1px 6px; border-radius: 999px; }
+.rt__sl { color: var(--red, #f87171); background: color-mix(in srgb, var(--red, #f87171) 12%, transparent); }
+.rt__tp { color: var(--green, #4ade80); background: color-mix(in srgb, var(--green, #4ade80) 12%, transparent); }

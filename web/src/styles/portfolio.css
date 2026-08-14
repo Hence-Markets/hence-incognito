@@ -1,0 +1,850 @@
+/* =========================================================
+   Hence webapp — Portfolio screen styles (prefix: .pf-)
+   ========================================================= */
+
+.pf-screen {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px 26px 120px;
+  color: var(--text);
+}
+
+/* ---------- top header ---------- */
+.pf-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+.pf-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+}
+.pf-back svg { color: var(--dim); }
+.pf-back b { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+
+.pf-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+}
+.pf-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.pf-toggle button svg { opacity: .65; }
+.pf-toggle button:hover { color: var(--text); }
+.pf-toggle button.on {
+  background: var(--elevated);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+.pf-toggle button.on svg { opacity: 1; }
+
+/* ---------- two-column grid ---------- */
+.pf-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.05fr);
+  gap: 22px;
+  align-items: start;
+}
+.pf-left { display: flex; flex-direction: column; gap: 18px; }
+
+/* ---------- cards ---------- */
+.pf-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 18px 16px;
+}
+.pf-card-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.pf-card-h h3 { font-size: 13.5px; font-weight: 600; margin: 0; }
+.pf-cap { font-size: 11.5px; color: var(--dim); font-weight: 500; }
+.pf-mini-btn {
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--dim);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pf-mini-btn:hover { color: var(--text); background: var(--hover); }
+
+/* ---------- watchlist-vs-markets chart ---------- */
+.pf-chart-card { min-height: 320px; display: flex; flex-direction: column; }
+.pf-chart-wrap { position: relative; flex: 1; min-height: 200px; margin: 10px 0 6px; }
+.pf-chart-wrap .chart { width: 100%; height: 100%; display: block; }
+.pf-axis {
+  position: absolute; right: -2px;
+  font-size: 10px; color: var(--dimmer);
+  font-variant-numeric: tabular-nums;
+}
+.pf-axis--top { top: 4px; }
+.pf-axis--bot { bottom: 28px; }
+
+.pf-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+.pf-leg-sp, .pf-leg-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--dim);
+}
+.pf-leg-sp i {
+  width: 9px; height: 2px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 2px;
+}
+.pf-leg-add { color: var(--dimmer); }
+.pf-leg-add svg { color: var(--dimmer); }
+
+/* ---------- relevant earnings ---------- */
+.pf-earn-card { padding-bottom: 8px; }
+.pf-earn-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 2px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+}
+.pf-earn-card .pf-earn-row:first-of-type { border-top: 1px solid var(--line); margin-top: 6px; }
+.pf-earn-id b { font-weight: 600; }
+.pf-earn-id small { color: var(--dim); font-size: 12px; margin-left: 6px; }
+.pf-earn-date { color: var(--dim); font-size: 12px; }
+.pf-earn-val { font-variant-numeric: tabular-nums; color: var(--text); min-width: 36px; text-align: right; }
+.pf-earn-chip {
+  font-size: 10.5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--dim);
+  border: 1px solid var(--line);
+}
+.pf-earn-chip.beat {
+  background: var(--up-bg, rgba(95,207,145,.12));
+  color: var(--up);
+  border-color: transparent;
+}
+
+/* ===================================================================== */
+/*  RIGHT — Your watchlists table                                        */
+/* ===================================================================== */
+.pf-right { min-width: 0; }
+.pf-right-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.pf-right-h h3 { font-size: 13.5px; font-weight: 600; margin: 0; }
+.pf-right-tools { display: flex; align-items: center; gap: 10px; }
+
+.pf-ranges {
+  display: inline-flex;
+  gap: 1px;
+}
+.pf-ranges button {
+  border: 0; background: transparent;
+  color: var(--dim);
+  font: inherit; font-size: 11.5px; font-weight: 500;
+  padding: 5px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.pf-ranges button:hover { color: var(--text); }
+.pf-ranges button.on { background: var(--elevated); color: var(--text); }
+
+.pf-tool-grp { display: inline-flex; gap: 4px; }
+.pf-tool {
+  width: 28px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--dim);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pf-tool:hover { color: var(--text); background: var(--hover); }
+
+/* table head */
+.pf-thead {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--dimmer);
+}
+.pf-th-price { text-align: right; }
+.pf-th-ret { min-width: 140px; text-align: right; }
+
+/* rows */
+.pf-rows { padding-top: 2px; }
+.pf-sec-cap {
+  font-size: 11px;
+  color: var(--dim);
+  font-weight: 500;
+  padding: 14px 10px 6px;
+}
+.pf-row {
+  display: grid;
+  grid-template-columns: 20px 30px 1fr auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  transition: background .12s var(--ease);
+}
+.pf-row:hover { background: var(--hover); }
+.pf-row.sel { background: var(--panel-2); }
+
+.pf-check {
+  width: 17px; height: 17px;
+  border: 1.4px solid var(--line-3);
+  border-radius: 5px;
+  background: transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: #0a0a0b;
+  opacity: 0;
+  transition: opacity .12s var(--ease), background .12s var(--ease), border-color .12s var(--ease);
+}
+.pf-row:hover .pf-check,
+.pf-check.on { opacity: 1; }
+.pf-check.on {
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.pf-logo { position: relative; display: inline-flex; align-items: center; }
+.pf-eye {
+  position: absolute;
+  right: -10px;
+  color: var(--dimmer);
+  opacity: 0;
+  transition: opacity .12s var(--ease);
+}
+.pf-row:hover .pf-eye { opacity: 1; }
+
+.pf-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 12.5px;
+  overflow: hidden;
+}
+.pf-id b { font-weight: 600; flex-shrink: 0; }
+.pf-id span { color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-row-call {
+  display: inline-flex;
+  color: var(--peach);
+  flex-shrink: 0;
+}
+
+.pf-price {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 12.5px;
+  text-align: right;
+  min-width: 72px;
+}
+.pf-chg {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  text-align: right;
+  min-width: 64px;
+}
+.pf-pill {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-align: right;
+  min-width: 62px;
+}
+.pf-chg.up, .pf-pill.up { color: var(--up); }
+.pf-chg.down, .pf-pill.down { color: var(--down); }
+.pf-pill.up { background: var(--up-bg, rgba(95,207,145,.12)); }
+.pf-pill.down { background: var(--down-bg, rgba(240,141,131,.12)); }
+
+/* ---------- inline "New section" input (#87/#88) ---------- */
+.pf-newsec {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px 4px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.4);
+}
+.pf-newsec-in {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 0;
+  outline: none;
+}
+.pf-newsec-in::placeholder { color: var(--dimmer); }
+.pf-newsec-cancel {
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.pf-newsec-cancel:hover { color: var(--text); background: var(--hover); }
+
+/* ===================================================================== */
+/*  EMPTY STATE (#79)                                                     */
+/* ===================================================================== */
+.pf-empty {
+  position: relative;
+  min-height: 460px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.pf-empty-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(420px 280px at 50% 42%, rgba(244,195,154,.10), transparent 70%),
+    radial-gradient(700px 460px at 50% 50%, rgba(91,108,240,.06), transparent 75%);
+  pointer-events: none;
+}
+.pf-empty-inner {
+  position: relative;
+  text-align: center;
+  max-width: 360px;
+  padding: 0 20px;
+}
+.pf-plaid-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 26px;
+}
+.pf-plaid-dot { width: 7px; height: 7px; border-radius: 50%; opacity: .8; }
+.pf-plaid-logo {
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--text);
+  color: #0a0a0b;
+  border-radius: 10px;
+  margin: 0 4px;
+}
+.pf-empty-inner h2 { font-size: 19px; font-weight: 600; margin: 0 0 12px; letter-spacing: -0.01em; }
+.pf-empty-inner p {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--dim);
+  margin: 0 0 24px;
+}
+.pf-empty-inner p b { color: var(--text); font-weight: 500; }
+.pf-connect-btn {
+  border: 0;
+  background: var(--text);
+  color: #0a0a0b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 11px 0;
+  width: 220px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: opacity .15s var(--ease);
+}
+.pf-connect-btn:hover { opacity: .9; }
+
+/* ===================================================================== */
+/*  PLAID MODAL (#82)                                                     */
+/* ===================================================================== */
+.pf-plaid-modal {
+  position: relative;
+  width: 320px;
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+.pf-plaid-x {
+  position: absolute;
+  top: 14px; right: 14px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: transparent;
+  color: var(--dim);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pf-plaid-x:hover { color: var(--text); background: var(--hover); }
+.pf-plaid-marks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 6px 0 20px;
+}
+.pf-mark {
+  width: 42px; height: 42px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 12px;
+}
+.pf-mark--hence { background: #0a0a0b; color: var(--text); border: 1px solid var(--line-2); }
+.pf-mark--plaid { background: var(--text); color: #0a0a0b; }
+.pf-plaid-modal h3 {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0 0 22px;
+  letter-spacing: -0.01em;
+}
+.pf-plaid-modal h3 span { white-space: nowrap; }
+.pf-plaid-feats {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pf-plaid-feats li { display: flex; gap: 12px; align-items: flex-start; }
+.pf-plaid-feats li > svg { color: var(--text); margin-top: 1px; flex-shrink: 0; }
+.pf-plaid-feats b { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 3px; }
+.pf-plaid-feats span { font-size: 11.5px; color: var(--dim); line-height: 1.45; }
+.pf-plaid-fine {
+  font-size: 10.5px;
+  color: var(--dimmer);
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+.pf-plaid-fine a { color: var(--dim); text-decoration: underline; }
+.pf-plaid-go {
+  width: 100%;
+  border: 0;
+  background: var(--text);
+  color: #0a0a0b;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pf-plaid-go:hover { opacity: .9; }
+
+/* ===================================================================== */
+/*  FLOATING BULK-ACTION TOOLBAR (#84/#85)                               */
+/* ===================================================================== */
+/* On desktop the floating dock morphs into the multiselect bar (see the dockSlot
+   occupant in Watchlist.tsx), so this in-page bar is the MOBILE-only fallback.
+   Uses the EXACT complement of the dock's `max-width:760px` hide (mobile.css) so
+   fractional widths in (760,761) never show both bars — or neither. */
+@media not all and (max-width: 760px) { .pf-bulk { display: none !important; } }
+.pf-bulk {
+  position: fixed;
+  left: 50%;
+  bottom: 96px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  padding: 8px 10px 8px 16px;
+  box-shadow: 0 16px 50px rgba(0,0,0,.55);
+  z-index: 60;
+  animation: pf-bulk-in .18s var(--ease);
+}
+@keyframes pf-bulk-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+.pf-bulk-count {
+  font-size: 12px;
+  color: var(--dim);
+  padding-right: 8px;
+  white-space: nowrap;
+}
+.pf-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pf-bulk-btn svg { color: var(--dim); }
+.pf-bulk-btn:hover { background: var(--hover); }
+.pf-bulk-btn.danger { color: var(--down); }
+.pf-bulk-btn.danger svg { color: var(--down); }
+
+/* ===================================================================== */
+/*  MOVE-TO-SECTION POPOVER (#86)                                         */
+/* ===================================================================== */
+.pf-menu {
+  position: fixed;
+  width: 300px;
+  background: var(--elevated);
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.6);
+  z-index: 70;
+  animation: pf-bulk-in .14s var(--ease);
+}
+.pf-menu-crumb { padding: 4px 4px 8px; }
+.pf-crumb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 12px 4px 8px;
+}
+.pf-crumb-pill svg { color: var(--dim); }
+.pf-menu-cap {
+  font-size: 10.5px;
+  color: var(--dimmer);
+  padding: 8px 8px 6px;
+  border-top: 1px solid var(--line);
+}
+.pf-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: left;
+}
+.pf-menu-item svg { color: var(--dim); flex-shrink: 0; }
+.pf-menu-item span { flex: 1; }
+.pf-menu-item .keycap {
+  font-size: 10px;
+  color: var(--dim);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+.pf-menu-item:hover,
+.pf-menu-item.on { background: var(--hover); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 880px) {
+  .pf-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  /* top header: back+title own line 1; the Holdings/Watchlist/Saved pill drops to its own
+     full-width line with every option VISIBLE — hidden horizontal sliding is undiscoverable */
+  .pf-top { flex-wrap: wrap; gap: 10px; row-gap: 12px; }
+  .pf-back { flex: none; }
+  .pf-toggle { flex: 1 0 100%; display: flex; }
+  .pf-toggle button { flex: 1; justify-content: center; padding: 6px 8px; }
+
+  /* readable names: the $-change column goes (the % pill carries the story), and
+     ticker + name get the freed space */
+  .pf-row { grid-template-columns: 20px 30px minmax(0, 1fr) auto auto; }
+  .pf-row .pf-chg { display: none; }
+  .pf-id { min-width: 0; overflow: hidden; }
+  .pf-id b { white-space: nowrap; }
+  .pf-id span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+
+  /* the watchlist title + range/tool buttons can't share one row at
+     375px — wrap the tools onto their own line and let them scroll */
+  .pf-right-h { flex-wrap: wrap; }
+  .pf-right-tools {
+    width: 100%; justify-content: space-between;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .pf-right-tools::-webkit-scrollbar { display: none; }
+  .pf-ranges, .pf-tool-grp { flex: none; }
+}
+
+/* very narrow phones (iPhone SE ≈ 320px): the 6-column watchlist row
+   (check/logo/id/price/change/pill) is too dense — tighten the gaps so
+   the price/change/% columns stop poking past the right edge */
+@media (max-width: 360px) {
+  .pf-row { gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .pf-price, .pf-chg { font-size: 12px; }
+}
+
+/* ---- Saved tab (Phase 3 capture surfaces) ---- */
+.pf-saved { max-width: 760px; margin: 0 auto; width: 100%; padding: 8px 0 40px; }
+.pf-saved-h { display: flex; align-items: baseline; gap: 10px; margin: 6px 4px 14px; }
+.pf-saved-h h3 { font-size: 16px; font-weight: 650; color: var(--text); }
+.pf-saved-count { font-size: 12px; color: var(--dimmer); }
+.pf-saved-list { display: flex; flex-direction: column; gap: 6px; }
+.pf-saved-row {
+  display: flex; align-items: center; gap: 11px; padding: 10px 12px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 11px;
+}
+.pf-saved-row:hover { border-color: var(--line-2); }
+.pf-saved-ic { flex: none; display: inline-flex; }
+.pf-saved-ic img { width: 22px; height: 22px; border-radius: 5px; object-fit: cover; }
+.pf-saved-title {
+  flex: 1; min-width: 0; font-size: 13.5px; color: var(--text); text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pf-saved-title:hover { color: var(--peach); }
+.pf-saved-sym {
+  flex: none; font-size: 11px; font-weight: 650; color: var(--dim);
+  padding: 2px 7px; border-radius: 6px; background: var(--elevated);
+}
+.pf-saved-time { flex: none; font-size: 11px; color: var(--dimmer); font-variant-numeric: tabular-nums; }
+.pf-saved-x {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 7px; background: none; border: none;
+  color: var(--dimmer); cursor: pointer; transition: background .12s var(--ease), color .12s var(--ease);
+}
+.pf-saved-x:hover { background: var(--hover); color: var(--text); }
+.pf-saved-empty { text-align: center; color: var(--dimmer); padding: 60px 20px; }
+.pf-saved-empty svg { color: var(--dim); margin-bottom: 12px; }
+.pf-saved-empty p { font-size: 13px; max-width: 340px; margin: 0 auto; line-height: 1.5; }
+
+/* ---------- real-data additions (per-user watchlist + holdings) ---------- */
+/* eye toggle is now a button that plots the row in the "vs markets" chart */
+.pf-eye { background: none; border: none; cursor: pointer; padding: 0; display: inline-flex; }
+.pf-eye.on { color: var(--gold, var(--peach)); opacity: 1; }
+/* dim price/pill for symbols with no live data */
+.pf-price--dim, .pf-pill--dim { color: var(--dimmer); background: none; }
+/* per-section delete X + section-cap layout */
+.pf-sec-cap { display: flex; align-items: center; justify-content: space-between; }
+.pf-sec-x {
+  background: none; border: none; color: var(--dimmer); cursor: pointer; display: inline-flex;
+  padding: 2px; border-radius: 5px; opacity: 0; transition: opacity .12s var(--ease), background .12s var(--ease), color .12s var(--ease);
+}
+.pf-sec-cap:hover .pf-sec-x { opacity: 1; }
+.pf-sec-x:hover { background: var(--hover); color: var(--text); }
+/* "Add stocks" placeholder row for an empty custom section */
+.pf-add-ph {
+  display: flex; align-items: center; gap: 8px; color: var(--dimmer);
+  font-size: 12.5px; padding: 11px 10px; border-bottom: 1px solid var(--line);
+}
+/* second (Watchlist) legend line + empty states */
+.pf-leg-wl { display: inline-flex; align-items: center; gap: 7px; color: var(--dim); font-size: 12px; }
+.pf-leg-wl i { width: 14px; height: 2px; border-radius: 2px; background: rgba(232,164,74,.95); display: inline-block; }
+.pf-earn-empty { color: var(--dimmer); font-size: 12.5px; padding: 16px 6px; text-align: center; }
+.pf-wl-empty { color: var(--dimmer); font-size: 13px; padding: 40px 20px; text-align: center; line-height: 1.5; }
+.pf-wl-empty svg { vertical-align: -2px; }
+/* Holdings tab wrapper on the screen (full-width). The shared .hv-* styles live in
+   app.css so they're available in the home-screen drawer too (which doesn't load
+   portfolio.css). */
+.pf-holdings-wrap { padding: 8px 4px 40px; }
+
+/* =========================================================
+   #/portfolio — unified cross-venue money view (prefix .pf__)
+   ========================================================= */
+.pf { max-width: 980px; margin: 0 auto; padding: 26px 20px 80px; display: flex; flex-direction: column; gap: 18px; }
+.pf__head { display: flex; align-items: baseline; gap: 12px; }
+.pf__head h2 { font-size: 22px; font-weight: 650; }
+.pf__addr { font-family: var(--mono); font-size: 11px; color: var(--dimmer); }
+.pf__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.pf__kpis > div { background: var(--panel); padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+.pf__kpis span { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--dimmer); }
+.pf__kpis b { font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.pf__curve { padding: 16px 18px; }
+.pf__curvehead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.pf__curvetitle { font-size: 12px; color: var(--dim); font-weight: 560; }
+.pf__venues { display: flex; gap: 18px; margin-top: 10px; font-family: var(--mono); font-size: 10.5px; color: var(--dimmer); flex-wrap: wrap; }
+.pf__sec .sec-title { display: flex; align-items: center; }
+.pf__filters { margin-left: auto; display: flex; gap: 6px; }
+.pf__filters .btn-ghost { font-size: 11.5px; padding: 4px 10px; }
+.pf__filters .btn-ghost.on { border-color: var(--line-3); background: var(--elevated); color: var(--text); }
+.pf__theses { display: flex; flex-direction: column; gap: 10px; }
+.pf__thesis { padding: 14px 16px; }
+.pf__throw { display: flex; align-items: center; gap: 10px; }
+.pf__thtitle { font-size: 13.5px; font-weight: 620; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf__thpnl { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 650; font-size: 13.5px; }
+.pf__badge { font-family: var(--mono); font-size: 9px; letter-spacing: .06em; padding: 2px 7px; border-radius: 5px; text-transform: uppercase; flex: none; }
+.pf__badge.gold { color: var(--gold); background: rgba(230,200,79,0.12); }
+.pf__badge.down { color: var(--down); background: var(--down-bg); }
+.pf__legs { margin-top: 10px; display: flex; flex-direction: column; }
+.pf__leg { display: flex; align-items: center; gap: 9px; padding: 6px 0; border-top: 1px dashed rgba(255,255,255,0.06); font-size: 12.5px; }
+.pf__legsym { font-family: var(--mono); font-weight: 620; }
+.pf__legdetail { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--dim); display: flex; align-items: center; gap: 8px; }
+.pf__legdetail.ghost { color: var(--dimmest); }
+.pf__arm { font-size: 10.5px; padding: 2px 9px; }
+/* ---- a funded thesis as an INDEX row: one holding, expandable to its legs ---- */
+.pf__idx { padding: 0; margin-bottom: 10px; overflow: hidden; }
+.pf__idxhead { display: grid; grid-template-columns: 14px auto 1.7fr .8fr .9fr; align-items: center; gap: 10px; padding: 13px 16px; cursor: pointer; transition: background .12s; }
+.pf__idxhead:hover { background: var(--hover); }
+.pf__idxhead:focus-visible { outline: 1px solid var(--line-3, var(--line)); outline-offset: -2px; }
+.pf__idxcaret { color: var(--dimmer); display: inline-flex; }
+.pf__idxlogos { display: inline-flex; align-items: center; }
+.pf__idxlogos > * { margin-right: -6px; border-radius: 50%; box-shadow: 0 0 0 2px var(--panel); }
+.pf__idxid { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.pf__idxid b { font-size: 13px; font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf__idxid small { font-size: 10.5px; color: var(--dimmer); font-variant-numeric: tabular-nums; }
+
+.pf__idxbody { border-top: 1px solid var(--line); background: rgba(0,0,0,0.18); padding: 2px 16px 12px; }
+.pf__idxleg { display: grid; grid-template-columns: 1.5fr auto .7fr .8fr .8fr .9fr auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px dashed rgba(255,255,255,0.06); font-size: 12.5px; }
+.pf__idxleg:first-child { border-top: none; }
+.pf__idxlegid { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--text); text-decoration: none; }
+.pf__idxlegid b { font-family: var(--mono); font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf__idxlegid:hover b { text-decoration: underline; }
+.pf__closebtn { font-size: 10.5px; padding: 3px 10px; }
+.pf__idxfoot { display: flex; align-items: center; gap: 8px; padding-top: 11px; margin-top: 2px; border-top: 1px solid var(--line); }
+.pf__closeall { margin-left: auto; font-size: 11px; padding: 5px 12px; color: var(--down); border-color: color-mix(in srgb, var(--down) 35%, transparent); }
+.pf__closeall:hover:not(:disabled) { background: var(--down-bg); }
+
+.pf__table { padding: 4px 16px; }
+.pf__row { display: grid; grid-template-columns: 1.6fr .7fr .8fr .8fr .8fr .9fr; align-items: center; gap: 10px; padding: 11px 0; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--text); }
+.pf__table .pf__row:first-child { border-top: none; }
+.pf__row--pm { grid-template-columns: 2.4fr 1fr .9fr .9fr; }
+.pf__who { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.pf__who b { font-family: var(--mono); font-weight: 620; }
+.pf__pmtitle { font-family: inherit !important; font-weight: 560 !important; font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf__dir { font-family: var(--mono); font-size: 9px; font-weight: 700; letter-spacing: .08em; padding: 2.5px 6px; border-radius: 5px; color: var(--up); background: var(--up-bg); flex: none; }
+.pf__dir.short, .pf__dir.no { color: var(--down); background: var(--down-bg); }
+.pf__cell { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; display: flex; flex-direction: column; }
+.pf__cell small, .pf__pnl small { font-size: 9px; color: var(--dimmer); font-weight: 400; }
+.pf__pnl { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; font-weight: 650; display: flex; flex-direction: column; }
+.pf__grid2 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
+.pf__alloc, .pf__activity { padding: 14px 16px; }
+.pf__allocrow { display: flex; align-items: center; gap: 18px; }
+.pf__alloclegend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+.pf__alloclegend div { display: flex; align-items: center; gap: 8px; }
+.pf__alloclegend i { width: 8px; height: 8px; border-radius: 2px; }
+.pf__alloclegend b { margin-left: auto; font-variant-numeric: tabular-nums; }
+.pf__act { display: flex; gap: 10px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--line); font-size: 12px; }
+.pf__act:first-of-type { border-top: none; }
+.pf__actdetail { color: var(--dimmer); font-family: var(--mono); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf__acttime { margin-left: auto; color: var(--dimmest); font-family: var(--mono); font-size: 10px; flex: none; }
+.pf__empty { border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--dim); }
+.pf__empty p { font-size: 12.5px; color: var(--dimmer); max-width: 380px; }
+.pf__empty--soft { padding: 28px 16px; }
+.pf__loading { display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 760px) {
+  .pf { padding: 18px 12px 96px; }
+  .pf__grid2 { grid-template-columns: 1fr; }
+  .pf__row { grid-template-columns: 1.4fr .9fr .9fr; }
+  .pf__row .pf__cell:nth-child(3), .pf__row .pf__cell:nth-child(4) { display: none; }
+  .pf__row--pm { grid-template-columns: 1.8fr .9fr .9fr; }
+  .pf__row--pm .pf__cell:nth-child(2) { display: none; }
+  /* the index row keeps identity + P&L on mobile; value and the middle leg columns go */
+  .pf__idxhead { grid-template-columns: 12px auto 1.5fr .9fr; padding: 12px 13px; }
+  .pf__idxhead .pf__cell { display: none; }
+  .pf__idxbody { padding: 2px 13px 12px; }
+  .pf__idxleg { grid-template-columns: 1.3fr auto .9fr auto; }
+  .pf__idxleg .pf__cell:nth-child(3), .pf__idxleg .pf__cell:nth-child(4) { display: none; }
+}
+
+/* ── Author rating (owner-only). Quiet by design: this is a self-assessment surface, not a
+   trophy case, and it sits between the equity and the positions it actually scores. ── */
+.ratc{border:1px solid var(--border,#23262d);border-radius:14px;padding:16px 18px;
+  background:var(--surface-1,#111318);margin:0 0 14px}
+.ratc__top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.ratc__label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3,#6b7280)}
+.ratc__num{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:650;
+  line-height:1.15;margin-top:4px;font-variant-numeric:tabular-nums}
+.ratc__tier{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;
+  background:var(--surface-2,#16181d);color:var(--text-2,#9aa0aa);border:1px solid var(--border,#23262d)}
+.ratc__tier--established{color:#8fd3a8;border-color:#264a35;background:#111c15}
+.ratc__tier--tracking{color:#8fb4d3;border-color:#24384a;background:#111820}
+.ratc__tier--emerging{color:#c8b98f;border-color:#463f26;background:#1b1811}
+.ratc__delta{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text-2,#9aa0aa)}
+.ratc__delta.is-up{color:#4ade80}
+.ratc__delta.is-down{color:#f87171}
+.ratc__spark{width:100%;height:44px;display:block;margin:12px 0 4px;overflow:visible}
+.ratc__baseline{stroke:var(--border,#23262d);stroke-width:1;stroke-dasharray:3 3;vector-effect:non-scaling-stroke}
+.ratc__line{fill:none;stroke-width:2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.ratc__line.is-up{stroke:#4ade80}
+.ratc__line.is-down{stroke:#f87171}
+.ratc__why{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.ratc__why li{font-size:12px;color:var(--text-2,#9aa0aa);background:var(--surface-2,#16181d);
+  border:1px solid var(--border,#23262d);border-radius:999px;padding:4px 10px}
+.ratc__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.ratc__grid div{display:flex;flex-direction:column;gap:2px}
+.ratc__grid b{font-size:15px;font-weight:620;font-variant-numeric:tabular-nums}
+.ratc__grid span{font-size:11px;color:var(--text-3,#6b7280)}
+.ratc__note{font-size:11.5px;line-height:1.55;color:var(--text-3,#6b7280);margin:14px 0 0}
+@media (max-width:640px){
+  .ratc{padding:14px}
+  .ratc__grid{grid-template-columns:repeat(2,1fr)}
+  .ratc__num{font-size:26px}
+}
+
+/* ── xyz fee rebates: earned money, styled like the other money blocks ── */
+.pf__rebate{border:1px solid var(--border,#23262d);border-radius:14px;padding:15px 18px;
+  background:var(--surface-1,#111318);margin:0 0 14px;display:flex;flex-direction:column;gap:13px}
+.pf__rebate-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.pf__rebate-h b{font-size:14px;font-weight:640}
+.pf__rebate-h span{font-size:11.5px;color:var(--text-3,#6b7280)}
+.pf__rebate-n{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pf__rebate-n > div{display:flex;flex-direction:column;gap:2px}
+.pf__rebate-n span{font-size:11px;color:var(--text-3,#6b7280);text-transform:uppercase;letter-spacing:.05em}
+.pf__rebate-n b{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums}
+.pf__rebate-n b.up{color:var(--green,#4ade80)}
+.pf__rebate-n small{font-size:11px;color:var(--text-3,#6b7280)}
+@media(max-width:640px){.pf__rebate-n b{font-size:17px}}

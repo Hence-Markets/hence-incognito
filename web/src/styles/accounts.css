@@ -1,0 +1,209 @@
+/* =========================================================
+   Hence — Accounts modal (unified wallet + connections)
+   ========================================================= */
+/* the drawer's accent is the Hence brand peach — matches chips, kickers, the login gradient
+   (was a foreign Bitcoin-orange that appeared nowhere else in the app) */
+:root { --acct: #f4c39a; --acct-bg: rgba(244,195,154,0.13); }
+
+.acct-ov {
+  position: fixed; inset: 0; z-index: 240; display: grid; place-items: center;
+  opacity: 0; transition: opacity .18s var(--ease);
+}
+.acct-ov.in { opacity: 1; }
+.acct-ov__backdrop { position: absolute; inset: 0; background: rgba(4,4,6,0.72); backdrop-filter: blur(6px); }
+
+.acct-modal {
+  position: relative; display: grid; grid-template-columns: 264px 1fr;
+  width: min(1120px, 94vw); height: min(760px, 88vh);
+  background: var(--panel); border: 1px solid var(--line-2); border-radius: 16px;
+  overflow: hidden; box-shadow: 0 28px 80px rgba(0,0,0,.6);
+  transform: translateY(8px) scale(.99); transition: transform .2s var(--ease);
+}
+.acct-ov.in .acct-modal { transform: none; }
+
+/* ---- rail ---- */
+.acct-rail { display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--bg-2); min-height: 0; }
+.acct-rail__h { padding: 18px 18px 12px; font-size: 16px; font-weight: 600; color: var(--text); }
+.acct-rail__list { padding: 4px 10px; flex: 1; overflow-y: auto; }
+.acct-rail__item {
+  width: 100%; display: flex; align-items: center; gap: 9px; text-align: left;
+  padding: 9px 10px; border-radius: 9px; border: 1px solid transparent; background: transparent;
+  color: var(--dim); font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background .12s var(--ease), color .12s; margin-bottom: 2px;
+}
+.acct-rail__item:hover { background: var(--hover); color: var(--text); }
+.acct-rail__item.on { background: var(--elevated); color: var(--text); border-color: var(--line-2); box-shadow: inset 2px 0 0 var(--acct); }
+.acct-rail__item svg { color: var(--dimmer); }
+.acct-rail__count { margin-left: auto; font-size: 10px; color: var(--dim); background: var(--elevated); border: 1px solid var(--line-2); border-radius: 6px; padding: 0 6px; }
+.acct-rail__cap { padding: 14px 12px 6px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--dimmer); }
+.acct-rail__foot { padding: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.acct-connect-btn {
+  width: 100%; padding: 9px 12px; border-radius: 9px; border: 1px solid var(--line-2);
+  background: var(--panel-2); color: var(--text); font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: background .12s var(--ease), border-color .12s;
+}
+.acct-connect-btn:hover { background: var(--hover); border-color: var(--line-3); }
+.acct-connect-btn--primary { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-color: var(--acct); color: var(--acct); background: var(--acct-bg); font-weight: 600; }
+.acct-connect-btn--primary:hover { background: var(--acct-bg); border-color: var(--acct); filter: brightness(1.1); }
+
+/* ---- stage ---- */
+.acct-stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.acct-stage__h { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
+.acct-stage__h b { font-size: 16px; font-weight: 600; }
+.acct-x { background: transparent; border: 0; color: var(--dim); cursor: pointer; padding: 4px; border-radius: 7px; transition: background .12s, color .12s; }
+.acct-x:hover { background: var(--hover); color: var(--text); }
+.acct-stage__body { flex: 1; overflow-y: auto; padding: 18px 20px; min-height: 0; }
+.acct-stage__foot { display: flex; align-items: center; padding: 12px 20px; border-top: 1px solid var(--line); }
+.acct-foot__note { font-size: 11.5px; color: var(--dimmer); }
+
+/* ---- empty state ---- */
+.acct-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.acct-empty__ic { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 16px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--dim); margin-bottom: 18px; }
+.acct-empty h3 { font-size: 19px; font-weight: 600; margin-bottom: 8px; }
+.acct-empty p { font-size: 13px; color: var(--dim); line-height: 1.55; max-width: 420px; margin-bottom: 20px; }
+.acct-empty__chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.acct-chip { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 20px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12px; cursor: pointer; transition: background .12s, border-color .12s; }
+.acct-chip:hover { background: var(--hover); border-color: var(--acct); }
+
+.acct-cta { padding: 11px 26px; border-radius: 10px; border: 0; background: var(--acct); color: #0a0a0b; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: filter .12s, transform .1s; }
+.acct-cta:hover { filter: brightness(1.06); }
+.acct-cta:active { transform: translateY(1px); }
+.acct-cta--sm { padding: 8px 18px; font-size: 12.5px; }
+
+/* ---- monogram dot ---- */
+.acct-dot { display: inline-grid; place-items: center; flex: none; border-radius: 50%; background: var(--c); color: #0a0a0b; font-weight: 700; line-height: 1; }
+
+/* ---- columns (accounts list + unified panel) ---- */
+.acct-cols { display: grid; grid-template-columns: 1fr 340px; gap: 16px; height: 100%; }
+.acct-cols--single { grid-template-columns: 1fr; }
+
+.acct-list { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--line); border-radius: 12px; padding: 8px; background: var(--bg-2); align-content: start; }
+.acct-list--ext { gap: 4px; }
+.acct-list__cap { padding: 10px 8px 4px; font-size: 10.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--dimmer); }
+.acct-row { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 12px 13px; border-radius: 10px; border: 1px solid transparent; background: var(--panel-2); color: var(--text); cursor: pointer; transition: background .12s, border-color .12s; }
+.acct-row:hover { background: var(--hover); border-color: var(--line-2); }
+.acct-row.is-soon { opacity: .5; cursor: default; }
+.acct-row.is-soon:hover { background: var(--panel-2); border-color: transparent; }
+.acct-row__id { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.acct-row__id b { font-size: 13.5px; font-weight: 600; }
+.acct-row__id small { font-size: 11px; color: var(--dimmer); }
+.acct-row__bal { margin-left: auto; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.acct-row.is-soon .acct-row__bal { color: var(--dimmer); font-weight: 500; }
+.acct-row__st { color: var(--up) !important; }
+.acct-row__x { margin-left: 8px; background: transparent; border: 0; color: var(--dimmer); cursor: pointer; padding: 4px; border-radius: 6px; opacity: 0; transition: opacity .12s, background .12s, color .12s; }
+.acct-row--ext:hover .acct-row__x { opacity: 1; }
+.acct-row__x:hover { background: var(--down-bg); color: var(--down); }
+.acct-list__total { display: flex; align-items: center; justify-content: space-between; padding: 12px 13px 6px; margin-top: auto; border-top: 1px dashed var(--line-2); font-size: 13px; color: var(--dim); }
+.acct-list__total b { color: var(--text); font-size: 14px; }
+
+/* ---- unified wallet panel ---- */
+.acct-uw { border: 1px solid var(--line); border-radius: 12px; padding: 16px; background: var(--bg-2); display: flex; flex-direction: column; }
+.acct-uw__h { display: flex; align-items: center; gap: 9px; font-size: 14px; }
+.acct-uw__h b { font-weight: 600; }
+.acct-uw__menu { margin-left: auto; background: transparent; border: 0; color: var(--dim); cursor: pointer; padding: 4px; border-radius: 6px; }
+.acct-uw__menu:hover { background: var(--hover); color: var(--text); }
+.acct-uw__addr { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.acct-uw__chain { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
+.acct-uw__copy { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 0; color: var(--text); font-size: 12px; font-family: var(--mono, inherit); cursor: pointer; padding: 3px 6px; border-radius: 6px; }
+.acct-uw__copy:hover { background: var(--hover); color: var(--acct); }
+.acct-uw__bal { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin: 16px 0 6px; padding-bottom: 14px; border-bottom: 1px solid var(--line); display: inline-block; }
+.acct-uw__actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 4px 0 16px; }
+.acct-uw__actions button { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 13px 4px; border-radius: var(--radius-sm); border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12.5px; font-weight: 500; cursor: pointer; transition: background .12s, border-color .12s, transform .1s; }
+.acct-uw__actions button:hover { background: var(--hover); border-color: var(--acct); }
+.acct-uw__actions button:active { transform: translateY(1px); }
+.acct-uw__actions svg { color: var(--text); }
+.acct-uw__tabs { display: flex; gap: 18px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.acct-uw__tabs button { background: transparent; border: 0; padding: 8px 0; color: var(--dimmer); font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.acct-uw__tabs button.on { color: var(--acct); border-bottom-color: var(--acct); }
+.acct-uw__empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--dimmer); font-size: 12.5px; }
+
+/* ---- connect dialog ---- */
+.acct-dlg { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; transition: opacity .14s var(--ease); }
+.acct-dlg.in { opacity: 1; }
+.acct-dlg__backdrop { position: absolute; inset: 0; background: rgba(4,4,6,0.55); }
+.acct-dlg__panel { position: relative; width: min(420px, 90%); max-height: 78%; display: flex; flex-direction: column; background: var(--elevated); border: 1px solid var(--line-2); border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.55); overflow: hidden; }
+.acct-dlg__h { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 12px; }
+.acct-dlg__h b { font-size: 15px; font-weight: 600; }
+.acct-dlg__h button { background: transparent; border: 0; color: var(--dim); cursor: pointer; }
+.acct-dlg__field { padding: 0 18px; font-size: 11px; color: var(--acct); text-transform: none; }
+.acct-dlg__list { padding: 8px 10px 6px; overflow-y: auto; }
+.acct-dlg__item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 11px 12px; border-radius: 9px; border: 0; background: transparent; color: var(--text); font-size: 13.5px; cursor: pointer; transition: background .1s var(--ease); }
+.acct-dlg__item:hover { background: var(--hover); }
+.acct-dlg__itx { display: flex; flex-direction: column; gap: 1px; }
+.acct-dlg__itx b { font-weight: 600; }
+.acct-dlg__itx small { font-size: 11px; color: var(--dimmer); }
+.acct-dlg__item svg:last-child { margin-left: auto; color: var(--dimmer); }
+.acct-dlg__note { padding: 10px 18px 16px; font-size: 11px; color: var(--dimmer); line-height: 1.5; border-top: 1px solid var(--line); }
+
+/* ---- empty-state dual CTA ---- */
+.acct-uw__emptyrow { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.acct-cta--ghost { background: var(--panel-2); color: var(--text); border: 1px solid var(--line-2); }
+.acct-cta--ghost:hover { background: var(--hover); }
+
+/* ---- receive (universal deposit) sheet ---- */
+.acct-recv { width: min(380px, 92%); padding-bottom: 18px; text-align: center; }
+.acct-recv__chains { display: flex; gap: 6px; justify-content: center; padding: 0 18px 12px; }
+.acct-recv__chip { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--dim); font-size: 12px; cursor: pointer; transition: border-color .12s, color .12s, background .12s; }
+.acct-recv__chip:hover { color: var(--text); border-color: var(--line-3); }
+.acct-recv__chip.on { color: #0a0a0b; background: var(--acct); border-color: var(--acct); font-weight: 600; }
+.acct-recv__qr { display: grid; place-items: center; margin: 2px auto 12px; }
+.acct-recv__qr img { width: 172px; height: 172px; border-radius: 12px; background: #fff; padding: 8px; box-sizing: border-box; }
+.acct-recv__net { font-size: 12px; color: var(--dimmer); margin-bottom: 8px; }
+.acct-recv__net b { color: var(--text); font-weight: 600; }
+.acct-recv__addr { display: inline-flex; align-items: center; gap: 7px; margin: 0 auto 10px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12.5px; font-family: var(--mono, ui-monospace, monospace); cursor: pointer; transition: background .12s, border-color .12s; }
+.acct-recv__addr:hover { background: var(--hover); border-color: var(--acct); color: var(--acct); }
+.acct-recv__warn { display: flex; align-items: flex-start; gap: 6px; text-align: left; margin: 2px 18px 14px; padding: 9px 11px; border-radius: 9px; background: var(--acct-bg); color: var(--dim); font-size: 11px; line-height: 1.5; }
+.acct-recv__warn b { color: var(--text); font-weight: 600; }
+.acct-recv__warn svg { flex: none; margin-top: 1px; color: var(--acct); }
+.acct-recv__bridge { display: inline-flex; align-items: center; gap: 8px; margin: 0 auto; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: background .12s, border-color .12s; }
+.acct-recv__bridge:hover { background: var(--hover); border-color: var(--acct); }
+.acct-recv__bridge svg { color: var(--acct); }
+.acct-recv__sub { margin: 8px 22px 0; font-size: 10.5px; color: var(--dimmer); line-height: 1.5; }
+
+/* ---- earn view ---- */
+.acct-earn { display: flex; flex-direction: column; gap: 12px; }
+.acct-earn__load { color: var(--dimmer); font-size: 13px; padding: 24px 4px; text-align: center; }
+.acct-earn__hd { display: flex; flex-direction: column; gap: 4px; }
+.acct-earn__hd b { font-size: 15px; font-weight: 600; }
+.acct-earn__hd span { font-size: 12px; color: var(--dimmer); line-height: 1.5; }
+.acct-earn__banner { display: flex; align-items: flex-start; gap: 7px; padding: 10px 12px; border-radius: 10px; background: var(--acct-bg); color: var(--dim); font-size: 11.5px; line-height: 1.5; }
+.acct-earn__banner svg { flex: none; margin-top: 1px; color: var(--acct); }
+.acct-earn__card { border: 1px solid var(--line-2); border-radius: 12px; padding: 14px; background: var(--panel-2); }
+.acct-earn__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.acct-earn__id { display: flex; flex-direction: column; gap: 2px; }
+.acct-earn__id b { font-size: 13.5px; font-weight: 600; }
+.acct-earn__id small { font-size: 11px; color: var(--dimmer); }
+.acct-earn__apy { display: flex; flex-direction: column; align-items: flex-end; font-size: 20px; font-weight: 700; color: var(--up); letter-spacing: -.02em; line-height: 1; }
+.acct-earn__apy small { font-size: 9px; font-weight: 600; color: var(--dimmer); letter-spacing: .08em; margin-top: 3px; }
+.acct-earn__blurb { margin: 9px 0 12px; font-size: 12px; color: var(--dim); line-height: 1.5; }
+.acct-earn__foot { font-size: 10.5px; color: var(--dimmer); line-height: 1.5; padding-top: 4px; }
+.acct-link { background: none; border: 0; color: var(--acct); font: inherit; cursor: pointer; text-decoration: underline; padding: 0; }
+
+@media (max-width: 760px) {
+  /* keep the rail as a horizontal top bar so Wallet / Earn / All Accounts stay reachable */
+  .acct-modal { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: 92vh; width: 96vw; }
+  .acct-rail { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px; gap: 8px; }
+  .acct-rail__h, .acct-rail__cap, .acct-rail__foot { display: none; }
+  .acct-rail__list { display: flex; flex-direction: row; gap: 8px; flex: 1; }
+  .acct-rail__item { white-space: nowrap; }
+  .acct-cols { grid-template-columns: 1fr; }
+}
+
+/* ---- real balance/activity rows in the unified-wallet panel ---- */
+.acct-uw__assets { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; max-height: 300px; overflow-y: auto; }
+.acct-uw__asset { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; background: var(--elevated); }
+.acct-uw__aid { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.acct-uw__aid b { font-size: 12.5px; font-weight: 600; }
+.acct-uw__aid small { font-size: 10.5px; color: var(--dimmer); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-uw__aamt { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; flex: none; }
+.acct-uw__ausd { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; flex: none; }
+
+/* receive → venue next-step hint (Arbitrum→HL link, Polygon→PM note) */
+.acct-recv__next { display: flex; align-items: flex-start; gap: 7px; margin: 10px 22px 0; padding: 9px 11px; border-radius: 9px; background: var(--panel-2); border: 1px solid var(--line-2); font-size: 10.5px; line-height: 1.5; color: var(--dim); text-align: left; }
+.acct-recv__next svg { flex: none; margin-top: 2px; color: var(--dimmer); }
+a.acct-recv__next { text-decoration: none; cursor: pointer; transition: border-color .12s var(--ease); }
+a.acct-recv__next:hover { border-color: var(--line); color: var(--text); }
+
+/* rail sign-out — quiet ghost under Planned connections (the drawer's exit door) */
+.acct-rail__signout { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; margin-top: 8px; padding: 9px 0; border-radius: 9px; border: 1px solid transparent; background: transparent; color: var(--dimmer); font-size: 12px; font-weight: 600; cursor: pointer; transition: .12s var(--ease); }
+.acct-rail__signout:hover { color: var(--text); border-color: var(--line-2); background: var(--panel-2); }

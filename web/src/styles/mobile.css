@@ -1,0 +1,193 @@
+/* ==========================================================
+   Hence webapp — mobile / touch overrides (loaded LAST)
+   Adapts desktop-specific controls (keyboard hints, wide
+   tables, two-column layouts) for small touch screens.
+   ========================================================== */
+
+/* hover affordances never fire on touch — suppress them everywhere */
+@media (hover: none) {
+  [data-tip]:hover::after { display: none !important; }
+  .dock-tip { display: none !important; }
+}
+
+@media (max-width: 760px) {
+  /* ---------- in-page section tabs split a multi-column page on mobile ---------- */
+  .sectiontabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sectiontabs::-webkit-scrollbar { display: none; }
+  .sectiontabs__t { flex: 1 0 auto; padding: 12px 14px; font-size: 13.5px; font-weight: 500; color: var(--dim); position: relative; white-space: nowrap; background: none; }
+  .sectiontabs__t.on { color: var(--text); }
+  .sectiontabs__t.on::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; background: var(--text); border-radius: 2px; }
+  .has-sectabs [data-sec] { display: none !important; }
+  .has-sectabs [data-sec].is-active { display: block !important; }
+  /* the columns wrapper no longer needs grid gaps when one section shows */
+  .has-sectabs .home2__cols, .has-sectabs .pf-grid, .has-sectabs .analysis { gap: 0 !important; }
+
+  /* ---------- desktop keyboard hints are meaningless on touch ---------- */
+  kbd, .keycap { display: none !important; }
+  .hint-pill { display: none !important; }                 /* economy "G then A" */
+  .welcome-kbd { display: none !important; }                /* onboarding Mac keyboard */
+  .welcome-kbhint { display: none !important; }             /* "...by pressing ⌘K" */
+  .welcome-touchhint { display: inline !important; }        /* touch-friendly copy */
+  .welcome-cmd__pill { display: flex !important; }          /* tappable search instead of keyboard */
+  .set-banner kbd { display: none; }
+  /* keep the "esc/return" hints out of bottom sheets */
+  .cmdk-esc, .modal-foot kbd { display: none !important; }
+
+  /* ---------- stack the stock overview (chart + info panel) ---------- */
+  .stock { padding: 16px !important; }
+  .stock-overview { grid-template-columns: 1fr !important; gap: 18px; }
+  /* a 1fr grid track = minmax(auto,1fr); without min-width:0 the child's
+     min-content (wide chart / range strip) blows the track past the viewport */
+  .stock-overview > * { min-width: 0; }
+  .stock__chart, .stock__chart .chart { height: 200px; }
+  .info-panel { margin-top: 0; }
+
+  /* the range selector (1D/1W/…/All): ONE row, compacted — 8 short labels fit 375px
+     when evenly distributed (no wrap, no hidden sliding) */
+  .range-row { flex-wrap: wrap; }
+  .range-row .segmented { display: flex; flex-wrap: nowrap; width: 100%; padding: 3px; }
+  .range-row .segmented button { flex: 1 1 0; min-width: 0; padding: 6px 0; font-size: 11.5px; }
+  .range-row > span { margin-left: 0 !important; }
+
+  /* analyst coverage head: the title + the Estimates/Ratings/Multiples
+     segmented can't share one row at 375px — wrap it onto its own line
+     and let the segmented scroll if still too wide */
+  .cover__head { flex-wrap: wrap; }
+  .cover__tabs { margin-left: 0 !important; width: 100%; }
+  .cover__tabs .segmented { display: flex; flex-wrap: nowrap; width: 100%; }
+  .cover__tabs .segmented button { flex: 1 1 0; min-width: 0; }
+
+  /* analysis screen toolbar: identity + Fundamentals/Peer/SEC segmented
+     overflow one row — wrap the segmented onto its own scrollable line */
+  .an-toolbar { flex-wrap: wrap; }
+  .an-toolbar > span[style*="margin-left"] { margin-left: 0 !important; width: 100%; }
+  .an-toolbar .segmented { display: flex; flex-wrap: nowrap; width: 100%; }
+  .an-toolbar .segmented button { flex: 1 1 0; min-width: 0; }
+
+  /* ---------- other two-column layouts collapse to one ---------- */
+  .analysis,
+  .sec-layout,
+  .cal-day,
+  .cmp-grid,
+  .pf-grid,
+  .stx-about,
+  .stx-share-cards,
+  .stx-pe-charts,
+  .econ__grid,
+  .cover__charts,
+  .grid-2 { grid-template-columns: 1fr !important; }
+  .stx-ecards { grid-template-columns: 1fr 1fr !important; }
+
+
+  /* ---------- wide tables & dense grids scroll horizontally ---------- */
+  .dtable,
+  .stx-fntable, .stx-etable, .stx-petable {
+    display: block; overflow-x: auto; white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* .scr-stage prefix so this wins over screener.css's `.scr-table{overflow:hidden}`
+     regardless of import order (0,2,0 beats 0,1,0) — else the 12-col table is clipped
+     with most columns unreachable */
+  .scr-stage .scr-table { overflow-x: auto; }
+  .scr-head, .scr-row { min-width: 1060px; }
+  /* asset-class tabs are a fixed ~411px inline-flex row — scroll strip on phones */
+  .scr-classtabs { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .scr-classtabs::-webkit-scrollbar { display: none; }
+  /* peer-analysis card clips its wide nowrap table (overflow:hidden for the radius) —
+     let it scroll sideways on phones so every peer column is reachable */
+  .pa-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cal-week, .cal-mgrid, .cal-mdow { min-width: 600px; }
+  .cal-weekwrap, .cal-monthwrap, .cal-month { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .mk-row { min-width: 620px; }
+  .cal-table, .mk-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cmp-gs-colhead, .cmp-gs-row { min-width: 700px; }
+  .cmp-gs, .cmp-series { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ---------- modals become bottom sheets that fit ---------- */
+  .modal { padding: 0; align-items: flex-end; }
+  .modal__dialog,
+  .modal__dialog.wide,
+  .modal__dialog.full {
+    width: 100% !important; max-height: 90vh; overflow-y: auto;
+    border-radius: 16px 16px 0 0; border-bottom: none;
+  }
+  .modal__dialog table, .modal__dialog .dtable {
+    display: block; overflow-x: auto; white-space: nowrap;
+  }
+
+  /* ---------- tighter page gutters ---------- */
+  .cover, .econ, .settings, .wlfull, .stock,
+  .analysis, .screener, .cal-wrap, .cmp-wrap, .pf-wrap {
+    padding-left: 14px !important; padding-right: 14px !important;
+  }
+
+  /* ---------- replace the floating dock with a native bottom tab bar ---------- */
+  .dock-slot { display: none !important; }
+  .tabbar { display: flex; }
+  .app-chrome { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+
+  /* ---------- home v2 stacks: market card then recap feed ---------- */
+  .home2 { padding: 18px 14px 0; }
+  .home2__cols { grid-template-columns: 1fr !important; gap: 14px; }
+  .hcard { padding: 18px 16px 6px; }
+  .eqbar { width: 130px; }
+  .home2__wl-handle { display: none !important; }
+  .feed-recap__sum { font-size: 15.5px; }
+  .feed-earn { grid-template-columns: 22px auto 1fr auto; }
+  .feed-earn__nm { display: none; }
+
+  /* topbar tabs scroll instead of disappearing */
+  .topbar { gap: 10px; }
+  .topbar__tabs { display: flex !important; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-left: auto; max-width: 60vw; }
+  .topbar__tabs::-webkit-scrollbar { display: none; }
+  .topbar__nm { display: none; }
+  /* the quote + Analyze ghost don't fit next to Trade/bookmark at 375px — the whole page
+     gets ~110px of horizontal scroll. The live price is in the hero right below; Analyze
+     stays reachable from the asset chrome. (Same pattern as the .topbar__nm hide above.) */
+  .topbar__quote { display: none; }
+  .topbar .btn-ghost { display: none; }
+}
+
+@media (max-width: 560px) {
+  .kpi-strip { grid-template-columns: repeat(2, 1fr) !important; }
+  .stx-ecards { grid-template-columns: 1fr 1fr !important; }
+  .topbar__tabs { max-width: 52vw; }
+  /* welcome / onboarding headings smaller */
+  .welcome-title, .flow__title, .login__title, .lx-title { font-size: clamp(24px, 7vw, 30px) !important; }
+}
+
+/* thin custom scrollbars for the horizontal-scroll containers */
+@media (max-width: 760px) {
+  .dtable::-webkit-scrollbar, .scr-table::-webkit-scrollbar,
+  .cal-month::-webkit-scrollbar, .topbar__tabs::-webkit-scrollbar { height: 0; width: 0; }
+}
+
+/* ---------- slide-strip: horizontal option rows with a visible "more" affordance ----------
+   Options keep natural width (never flex-fill), so at any viewport the next option is
+   partially visible; the right-edge fade reinforces it. Used where the option set is
+   genuinely too wide for one screen (screener classes, terminal picker tabs). */
+@media (max-width: 760px) {
+  .scr-classtabs, .msel-tabs {
+    display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent);
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent);
+  }
+  .scr-classtabs::-webkit-scrollbar, .msel-tabs::-webkit-scrollbar { display: none; }
+  .scr-classtabs button, .msel-tabs .msel-tab { flex: 0 0 auto; white-space: nowrap; }
+}
+
+/* terminal bottom panel ≤760px: tabs become a one-row slide-strip (natural widths, right-edge
+   fade affordance — the standard mobile picker recipe); the desktop-only caption goes. */
+@media (max-width: 760px) {
+  /* terminal.css ships with the lazy Terminal chunk (imported AFTER this sheet), so these
+     overrides need the extra .term__bottom-bar parent to outrank it — not just source order. */
+  .term__bottom-bar .term__bottom-tools { display: none; }
+  .term__bottom-bar .term__bottom-tabs {
+    max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent);
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 34px), transparent);
+  }
+  .term__bottom-bar .term__bottom-tabs::-webkit-scrollbar { display: none; }
+  .term__bottom-bar .term__bottom-tabs button { white-space: nowrap; flex: none; }
+}

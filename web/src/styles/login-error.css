@@ -1,0 +1,376 @@
+/* ============================================================
+   login-error.css  —  auth (#/login) + error/exception (#/error)
+   All classes prefixed .lx-
+   ============================================================ */
+
+/* ---------- shared fullscreen flow shell ---------- */
+.lx-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px 120px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* close (X) button top-right — dismiss convention */
+.lx-close {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 5;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.lx-close:hover { background: var(--hover); color: var(--text); }
+
+/* warm radial glow behind the auth card */
+.lx-glow {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 760px;
+  height: 520px;
+  background:
+    radial-gradient(closest-side, rgba(244,170,110,.12), transparent 70%),
+    radial-gradient(closest-side at 58% 58%, rgba(246,203,162,.06), transparent 72%);
+  filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lx-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* ---------- headings / copy ---------- */
+.lx-title {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  background: linear-gradient(95deg, #f0a868, #f6cba2 50%, #f6e7d6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lx-sub {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--dim);
+  margin: 0 auto 26px;
+  max-width: 320px;
+}
+
+/* ---------- email field (pill with inner submit) ---------- */
+.lx-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--panel-2);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 5px 6px 5px 22px;
+  transition: border-color .15s var(--ease), background .15s var(--ease);
+  margin: 0 auto;
+}
+.lx-field.is-focus {
+  border-color: var(--line-3);
+  background: var(--elevated);
+}
+.lx-field input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 15px;
+  height: 40px;
+  font-family: inherit;
+}
+.lx-field input::placeholder { color: var(--dimmer); }
+
+/* circular arrow submit inside the field */
+.lx-submit {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1.5px solid var(--line-3);
+  color: var(--dim);
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease);
+}
+.lx-submit:hover { color: var(--text); border-color: rgba(255,255,255,.32); }
+.lx-field.is-typed .lx-submit { color: var(--text); border-color: rgba(255,255,255,.45); }
+.lx-submit svg { display: block; }
+
+/* spinner shown while "sending" */
+.lx-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.22);
+  border-top-color: rgba(255,255,255,.85);
+  animation: lx-spin .7s linear infinite;
+}
+@keyframes lx-spin { to { transform: rotate(360deg); } }
+
+/* ---------- confirmation (Check your inbox) state ---------- */
+.lx-field.is-done {
+  border-color: rgba(95,207,145,.35);
+  background: rgba(95,207,145,.05);
+}
+.lx-field.is-done input {
+  color: var(--up);
+  pointer-events: none;
+}
+.lx-check {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid rgba(95,207,145,.5);
+  color: var(--up);
+  background: transparent;
+}
+
+/* ---------- "or" divider between the email pill and OAuth options ---------- */
+.lx-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px auto 0;
+  max-width: 320px;
+  font-size: 11px;
+  color: var(--dimmer);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.lx-or::before, .lx-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line-2);
+}
+
+/* ---------- Google / wallet sign-in — equal-weight native options ---------- */
+.lx-oauth-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 6px auto 0;
+}
+.lx-google, .lx-wallet {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background .15s var(--ease);
+}
+.lx-google:hover, .lx-wallet:hover { background: var(--panel-2); }
+.lx-google svg, .lx-wallet svg { display: block; }
+.lx-wallet svg { color: var(--text); }   /* equal presence with the full-color Google mark */
+
+/* secondary text link (Back to Login / Back to Signup) */
+.lx-back {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color .15s var(--ease);
+}
+.lx-back:hover { color: var(--text); }
+
+/* ---------- footer (terms / sign up) ---------- */
+.lx-foot {
+  position: absolute;
+  bottom: 26px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--dimmer);
+  z-index: 2;
+}
+.lx-foot-legal { font-size: 11px; }
+.lx-foot::before {
+  content: "";
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, 80vw);
+  height: 1px;
+  background: var(--line);
+}
+.lx-foot a, .lx-foot .lx-foot-em {
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+.lx-foot a:hover { text-decoration: underline; }
+
+/* fade between login form and confirmation */
+.lx-fade { animation: lx-fade-in .35s var(--ease); }
+@keyframes lx-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ============================================================
+   ERROR / EXCEPTION  (#/error)
+   ============================================================ */
+.lx-err {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.lx-err-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 50% at 50% 45%, rgba(60,40,40,.18), transparent 70%);
+  pointer-events: none;
+}
+.lx-err-inner {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.lx-err-glyph {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--down-bg, rgba(240,141,131,.12));
+  border: 1px solid rgba(240,141,131,.22);
+  color: var(--down);
+}
+.lx-err-title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+  background: linear-gradient(95deg, #f0a868, #f6cba2 50%, #f6e7d6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.lx-err-msg {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--dim);
+  margin: 0 auto 34px;
+  max-width: 440px;
+}
+.lx-err-msg a, .lx-link {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.lx-err-msg a:hover, .lx-link:hover { color: #fff; }
+
+/* the floating "sync engine" chip illustration */
+.lx-chip {
+  width: 210px;
+  height: 200px;
+  margin: 0 auto 30px;
+  border-radius: 14px;
+  background: linear-gradient(155deg, #2b2c31, #16171b 70%);
+  border: 1px solid var(--line-2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 24px 60px rgba(0,0,0,.5);
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.lx-chip::before {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  border-radius: 8px;
+  border: 1px dashed rgba(255,255,255,.06);
+}
+.lx-chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  color: var(--dimmer);
+  text-transform: uppercase;
+}
+.lx-chip-label svg { display: block; opacity: .7; }
+
+.lx-err-foot {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.lx-err-foot .lx-keycap {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin: 0 3px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f3f3f4;
+  color: #0a0a0b;
+  border-radius: 5px;
+  vertical-align: middle;
+  box-shadow: 0 1px 0 rgba(0,0,0,.4);
+}
+.lx-err-foot-sub {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--dim);
+}

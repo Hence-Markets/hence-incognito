@@ -1,0 +1,360 @@
+/* =========================================================================
+   Ask Hence — the dock-integrated assistant.
+     .ask-dock-wrap  bottom-centre column: [suggestions] [thread pop] [composer],
+                     anchored exactly where the dock lives; the pop GROWS UP.
+     .ask-side       the same conversation pinned as a right-hand panel.
+   Reuses the app's dark tokens; the composer mirrors the dock's glass pill.
+   ========================================================================= */
+
+/* shared glass (matches .dock) */
+.ask-pop, .ask-composer--dock {
+  background: rgba(20,21,25,0.86); border: 1px solid var(--line-2);
+  backdrop-filter: blur(16px) saturate(150%);
+  box-shadow: 0 16px 40px -12px rgba(0,0,0,0.7);
+}
+
+/* ---- bottom-centre dock stack ---- */
+.ask-dock-wrap {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 61; width: min(720px, calc(100vw - 32px));
+  display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+}
+
+/* the thread panel that blooms upward out of the composer */
+.ask-pop {
+  display: flex; flex-direction: column; border-radius: 18px; overflow: hidden;
+  max-height: min(58vh, 560px);
+  animation: ask-bloom .24s var(--ease);
+  transform-origin: bottom center;
+}
+@keyframes ask-bloom { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+
+.ask-pop__bar { display: flex; align-items: center; gap: 4px; padding: 9px 10px 7px 14px; border-bottom: 1px solid var(--line); }
+.ask-pop__brand { display: inline-flex; align-items: center; }
+.ask-pop__spacer { flex: 1; }
+.ask-pop__body { overflow-y: auto; padding: 15px 16px 16px; display: flex; flex-direction: column; gap: 18px; }
+.ask-pop__body::-webkit-scrollbar { width: 8px; }
+.ask-pop__body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 6px; }
+
+/* icon buttons in the bars */
+.ask-ibtn { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--dim); background: none; transition: background .12s, color .12s; }
+.ask-ibtn:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+.ask-ibtn:disabled { opacity: .35; cursor: default; }
+
+/* the ∴ brand mark */
+.ask-mark { font-size: 16px; line-height: 1; letter-spacing: .5px; color: var(--text); }
+.ask-mark--sm { font-size: 15px; color: var(--dim); }
+
+/* the Beta pill (Vercel-agent-style) */
+.ask-beta {
+  font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--dim);
+  border: 1px solid var(--line-2); border-radius: 999px; padding: 2px 8px; line-height: 1.3;
+}
+.ask-beta--sm { font-size: 9px; padding: 1.5px 6px; margin-left: 7px; }
+
+/* suggestion chips (empty state) — rotating, with ⌘1-3 accelerators */
+.ask-sugg { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.ask-sugg--col { flex-direction: column; align-items: stretch; width: 100%; }
+.ask-chip {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 12.5px; color: var(--text); background: rgba(20,21,25,0.86); backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--line-2); border-radius: 999px; padding: 8px 12px 8px 14px; transition: background .12s, border-color .12s;
+}
+.ask-sugg--col .ask-chip { border-radius: 11px; text-align: left; }
+.ask-chip:hover { background: var(--hover); border-color: var(--line-3); }
+.ask-chip__t { flex: 1; min-width: 0; }
+.ask-chip__kbd {
+  font-family: inherit; font-size: 10px; color: var(--dimmer); flex: none;
+  border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px;
+}
+.ask-chip:hover .ask-chip__kbd { color: var(--dim); }
+
+/* the Beta intro (empty side/full panel) */
+.ask-intro-mark { font-size: 26px; line-height: 1; color: var(--text); display: block; margin-bottom: 10px; }
+.ask-intro-t { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 650; color: var(--text); margin-bottom: 8px; }
+
+/* recent chats dropdown */
+.ask-hist {
+  position: absolute; top: calc(100% + 8px); right: -40px; z-index: 5; width: 250px;
+  background: rgba(20,21,25,0.97); border: 1px solid var(--line-2); border-radius: 12px;
+  box-shadow: 0 18px 44px -12px rgba(0,0,0,0.7); padding: 8px; display: flex; flex-direction: column; gap: 2px;
+}
+.ask-hist__k { font-size: 9px; letter-spacing: .12em; color: var(--dimmer); padding: 4px 8px 6px; }
+.ask-hist__empty { font-size: 11.5px; color: var(--dimmer); padding: 4px 8px 8px; }
+.ask-hist__row {
+  display: flex; align-items: baseline; gap: 8px; text-align: left;
+  border-radius: 8px; padding: 7px 8px; background: none; transition: background .12s;
+}
+.ask-hist__row:hover { background: var(--hover); }
+.ask-hist__title { flex: 1; min-width: 0; font-size: 12px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ask-hist__time { flex: none; font-size: 10px; color: var(--dimmer); font-variant-numeric: tabular-nums; }
+
+/* the "may make mistakes" footer */
+.ask-disclaim { text-align: center; font-size: 10px; color: var(--dimmest, var(--dimmer)); margin: 6px 0 0; }
+.ask-side .ask-disclaim { margin: 0; padding: 0 0 10px; background: var(--panel); }
+
+/* ---- composer (input) ---- */
+.ask-composer { display: flex; align-items: center; gap: 10px; }
+.ask-composer--dock { border-radius: 16px; padding: 11px 12px 11px 16px; }
+.ask-composer--side { border-top: 1px solid var(--line); padding: 12px 12px 14px 16px; background: var(--panel); }
+.ask-composer__mark { font-size: 17px; line-height: 1; color: var(--dim); flex: none; }
+.ask-composer__field { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text); font-size: 15px; font-family: inherit; }
+.ask-composer__field::placeholder { color: var(--dimmer); }
+.ask-composer__field:disabled { color: var(--dim); }
+.ask-composer__send { display: grid; place-items: center; width: 34px; height: 34px; flex: none; border-radius: 10px; background: var(--elevated); color: var(--text); transition: background .12s, opacity .12s; }
+.ask-composer__send:hover:not(:disabled) { background: var(--hover); }
+.ask-composer__send:disabled { opacity: .4; cursor: default; }
+
+/* ---- a Q→A turn (shared) ---- */
+.ask-turn { display: flex; flex-direction: column; gap: 10px; }
+.ask-q {
+  align-self: flex-end; max-width: 85%;
+  font-size: 13.5px; color: var(--text); font-weight: 500; line-height: 1.45;
+  background: var(--elevated); border: 1px solid var(--line-2);
+  border-radius: 13px 13px 4px 13px; padding: 9px 13px;
+}
+.ask-a { display: flex; flex-direction: column; gap: 11px; }
+.ask-a-txt { font-size: 14.5px; color: var(--text); line-height: 1.62; }
+.ask-a-txt.err { color: var(--down); }
+/* markdown-lite blocks inside an answer */
+.ask-a-txt .md-p { margin: 0 0 8px; }
+.ask-a-txt .md-p:last-child { margin-bottom: 0; }
+.ask-a-txt .md-h { margin: 10px 0 6px; font-weight: 650; font-size: 13.5px; letter-spacing: .01em; }
+.ask-a-txt .md-ul { margin: 0 0 8px; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.ask-a-txt .md-ul:last-child { margin-bottom: 0; }
+.ask-a-txt code { font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px; background: var(--elevated); border-radius: 5px; padding: 1px 5px; }
+.ask-a-txt .md-i { font-style: italic; }
+.ask-a-txt .md-ol { margin: 0 0 8px; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.ask-a-txt .md-hr { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
+.ask-a-txt .md-h1, .ask-a-txt .md-h2 { font-size: 14.5px; }
+.ask-a-txt .md-tablewrap { overflow-x: auto; margin: 2px 0 8px; border: 1px solid var(--line); border-radius: 10px; }
+.ask-a-txt .md-table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.ask-a-txt .md-table th, .ask-a-txt .md-table td { text-align: left; padding: 7px 11px; border-top: 1px solid var(--line); white-space: nowrap; }
+.ask-a-txt .md-table thead th { border-top: none; font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--dimmer); background: var(--panel-2); }
+/* inline asset chips (the recap's tk-chip language, inside answers) */
+.md-tk {
+  display: inline-flex; align-items: center; gap: 5px; vertical-align: -3px;
+  font-size: 12px; font-weight: 650; color: var(--text);
+  background: var(--elevated); border: 1px solid var(--line-2); border-radius: 7px;
+  padding: 1px 7px 1px 4px; margin: 0 1px; transition: background .12s, border-color .12s;
+}
+.md-tk:hover { background: var(--hover); border-color: var(--line-3); }
+.md-tk em { font-style: normal; font-size: 11px; font-variant-numeric: tabular-nums; }
+.md-tk em.up { color: var(--up); }
+.md-tk em.down { color: var(--down); }
+.ask-a-txt a { color: var(--up); text-decoration: none; border-bottom: 1px solid transparent; }
+.ask-a-txt a:hover { border-bottom-color: currentColor; }
+
+/* ---- the working treatment (Google-Docs-AI style): ONE shimmering activity label that
+   swaps in place — in the composer input slot and as a single transient chat line ---- */
+.ask-shimmer {
+  display: inline-block;
+  background: linear-gradient(100deg, var(--dim) 20%, var(--text) 50%, var(--dim) 80%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: ask-shimmer-sweep 1.6s linear infinite, ask-label-in .22s var(--ease);
+}
+@keyframes ask-shimmer-sweep { from { background-position: 130% 0; } to { background-position: -90% 0; } }
+@keyframes ask-label-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.ask-composer__working { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14.5px; }
+.ask-composer__working em { font-style: normal; }
+.ask-composer.is-working .ask-composer__field { flex: 0 0 0; width: 0; padding: 0; }
+.ask-composer.is-working .ask-composer__mark { animation: ask-mark-pulse 1.6s ease-in-out infinite; }
+@keyframes ask-mark-pulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+.ask-composer__send--stop { background: var(--elevated); color: var(--dim); }
+.ask-composer__send--stop:hover { color: var(--down); }
+@media (prefers-reduced-motion: reduce) {
+  .ask-shimmer { animation: none; -webkit-text-fill-color: currentColor; color: var(--text); background: none; }
+  .ask-composer.is-working .ask-composer__mark { animation: none; }
+}
+
+/* ---- PlanCard: the copilot's belief → trade plan (actionable leg cards) ---- */
+.plancard { border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); overflow: hidden; }
+.plancard__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 14px 4px; }
+.plancard__dir { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border-radius: 5px; padding: 2px 7px; }
+.plancard__dir--long { background: color-mix(in srgb, var(--up) 16%, transparent); color: var(--up); }
+.plancard__dir--short { background: color-mix(in srgb, var(--down) 16%, transparent); color: var(--down); }
+.plancard__dir--mixed { background: var(--elevated); color: var(--dim); }
+.plancard__title { font-size: 13.5px; font-weight: 650; }
+.plancard__meta { font-size: 11px; color: var(--dimmer); margin-left: auto; }
+.plancard__sum { margin: 0; padding: 2px 14px 10px; font-size: 12.5px; color: var(--dim); line-height: 1.5; }
+.plancard__legs { display: flex; flex-direction: column; }
+.plancard__leg { border-top: 1px solid var(--line); padding: 11px 14px; display: flex; flex-direction: column; gap: 6px; }
+.plancard__legtop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plancard__venue { font-size: 9.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--dimmer); border: 1px solid var(--line-2); border-radius: 4px; padding: 1px 5px; }
+.plancard__sym { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.plancard__q { font-size: 12.5px; font-weight: 550; }
+.plancard__side { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.plancard__side--long, .plancard__side--yes { color: var(--up); }
+.plancard__side--short, .plancard__side--no { color: var(--down); }
+.plancard__odds { font-size: 11.5px; color: var(--dim); margin-left: auto; font-variant-numeric: tabular-nums; }
+.plancard__facts { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.plancard__inv { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; color: var(--down); line-height: 1.45; }
+.plancard__inv svg { flex: none; margin-top: 2px; }
+.plancard__why { font-size: 12px; color: var(--dim); line-height: 1.5; }
+.plancard__acts { display: flex; gap: 6px; margin-top: 2px; }
+.plancard__act { font-size: 12px; font-weight: 550; border: 1px solid var(--line-2); border-radius: 8px; padding: 5px 12px; background: var(--elevated); color: var(--text); transition: background .12s, border-color .12s; }
+.plancard__act:hover:not(:disabled) { background: var(--hover); }
+.plancard__act:disabled { opacity: .55; }
+.plancard__act--pri { background: var(--text); color: var(--bg); border-color: transparent; }
+.plancard__act--pri:hover:not(:disabled) { background: var(--text); opacity: .88; }
+.plancard__foot { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.plancard__note { font-size: 10.5px; color: var(--dimmer); flex: 1; line-height: 1.4; }
+.plancard__savethesis { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; border-radius: 9px; padding: 7px 14px; background: color-mix(in srgb, var(--up) 14%, transparent); color: var(--up); border: 1px solid color-mix(in srgb, var(--up) 30%, transparent); transition: background .12s; }
+.plancard__savethesis:hover:not(:disabled) { background: color-mix(in srgb, var(--up) 22%, transparent); }
+.plancard__savethesis:disabled { opacity: .7; }
+/* Run is the primary outcome of a plan — Save only tracks it, Run puts money behind it. */
+.plancard__runthesis { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 650; border-radius: 9px; padding: 7px 14px; background: var(--text); color: var(--bg); border: 1px solid transparent; transition: opacity .12s; }
+.plancard__runthesis:hover { opacity: .88; }
+
+/* ---- conversion follow-ups: one-tap continuations toward an executable outcome ---- */
+.ask-followups { display: flex; gap: 6px; flex-wrap: wrap; }
+.ask-followup {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; font-weight: 550; padding: 6px 11px; border-radius: 9px;
+  background: var(--panel-2); border: 1px solid var(--line-2);
+  color: var(--text); transition: background .12s, border-color .12s, transform .1s;
+}
+.ask-followup svg { color: var(--up); }
+.ask-followup:hover:not(:disabled) { background: var(--hover); border-color: var(--line-3); }
+.ask-followup:active:not(:disabled) { transform: scale(.98); }
+.ask-followup:disabled { opacity: .55; }
+.ask-followup svg { flex: none; }
+
+/* ---- BacktestCard: in-conversation historical replay ---- */
+.btcard { border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.btcard__head { display: flex; align-items: center; gap: 8px; }
+.btcard__head > b { font-size: 13px; font-weight: 650; }
+.btcard__meta { font-size: 11px; color: var(--dimmer); }
+.btcard__open { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 550; color: var(--dim); border: 1px solid var(--line-2); border-radius: 7px; padding: 4px 9px; background: var(--elevated); }
+.btcard__open:hover { color: var(--text); background: var(--hover); }
+.btcard__chart { width: 100%; height: 92px; color: var(--dim); }
+.btcard__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.btcard__stats > div { display: flex; flex-direction: column; gap: 2px; }
+.btcard__stats span { font-size: 10px; color: var(--dimmer); letter-spacing: .04em; text-transform: uppercase; }
+.btcard__stats b { font-size: 13px; font-variant-numeric: tabular-nums; }
+.btcard__stats .up, .btcard__legs .up { color: var(--up); }
+.btcard__stats .down, .btcard__legs .down { color: var(--down); }
+.btcard__legs { display: flex; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 8px; }
+.btcard__leg { font-size: 11.5px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.btcard__leg em { font-style: normal; font-weight: 650; text-transform: uppercase; font-size: 10px; }
+
+/* live progress line (the "Collecting info… / Summarizing…" state) */
+.ask-progress { display: flex; align-items: center; gap: 10px; color: var(--dim); font-size: 13.5px; }
+.ask-progress__label { flex: 1; font-weight: 500; color: var(--text); }
+.ask-progress__stop { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--elevated); color: var(--dim); flex: none; transition: background .12s, color .12s; }
+.ask-progress__stop:hover { background: var(--hover); color: var(--text); }
+
+/* internal jump chips — a compact horizontal row (they used to stack full-width) */
+.ask-actions { display: flex; flex-flow: row wrap; gap: 6px; align-items: center; }
+.ask-jump {
+  display: inline-flex; align-items: center; gap: 7px; max-width: 100%;
+  font-size: 12.5px; font-weight: 550; color: var(--text);
+  background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 9px; padding: 6px 11px;
+  transition: background .13s, border-color .13s;
+}
+.ask-jump span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ask-jump svg { color: var(--dim); flex: none; transition: transform .13s, color .13s; }
+.ask-jump:hover { background: var(--hover); border-color: var(--line-3); }
+.ask-jump:hover svg { transform: translateX(2px); color: var(--text); }
+
+/* inline live asset widget inside an answer */
+.ask-asset {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 12px;
+  padding: 9px 11px; margin: 2px 0 4px;
+}
+.ask-asset__id { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.ask-asset__id b { font-size: 13px; color: var(--text); }
+.ask-asset__id span { font-size: 11px; color: var(--dimmer); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ask-asset__px { margin-left: auto; display: inline-flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+.ask-asset__px b { font-size: 13px; color: var(--text); font-weight: 650; }
+.ask-asset__px .up { color: var(--up); font-size: 11.5px; }
+.ask-asset__px .down { color: var(--down); font-size: 11.5px; }
+.ask-asset__acts { display: inline-flex; gap: 5px; margin-left: 8px; flex: none; }
+.ask-asset__acts button {
+  font-size: 11.5px; color: var(--dim); background: var(--elevated); border: 1px solid var(--line-2);
+  border-radius: 8px; padding: 5px 9px; transition: color .12s, background .12s;
+}
+.ask-asset__acts button:hover { color: var(--text); background: var(--hover); }
+
+/* external links */
+.ask-links { display: flex; flex-wrap: wrap; gap: 7px; padding-top: 2px; }
+.ask-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; transition: color .12s, border-color .12s; }
+.ask-link:hover { color: var(--text); border-color: var(--line-2); }
+.ask-link svg { color: var(--dimmer); flex: none; }
+
+/* ---- pinned right-hand side panel ---- */
+.ask-side {
+  position: fixed; top: 0; right: 0; height: 100vh; width: var(--ask-side-w, 384px); max-width: 92vw; z-index: 70;
+  display: flex; flex-direction: column;
+  background: var(--panel); border-left: 1px solid var(--line-2);
+  box-shadow: -24px 0 60px -30px rgba(0,0,0,0.8);
+  animation: ask-slide-in .26s var(--ease);
+}
+@keyframes ask-slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.ask-side__head { display: flex; align-items: center; gap: 9px; padding: 14px 12px 12px 16px; border-bottom: 1px solid var(--line); }
+.ask-side__title { font-size: 14px; font-weight: 650; color: var(--text); flex: 1; }
+.ask-side__body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+.ask-side__body::-webkit-scrollbar { width: 8px; }
+.ask-side__body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 6px; }
+
+/* empty state (side panel) */
+.ask-empty { padding: 8px 2px; }
+.ask-empty-h { font-size: 14px; color: var(--dim); line-height: 1.5; margin-bottom: 14px; }
+
+/* ---- the fullscreen takeover ---- */
+.ask-full-wrap { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; }
+.ask-full-backdrop { position: absolute; inset: 0; background: rgba(5,5,7,0.6); backdrop-filter: blur(6px); }
+.ask-full {
+  position: relative; display: flex; flex-direction: column;
+  width: min(860px, calc(100vw - 32px)); height: min(82vh, 780px);
+  background: rgba(18,19,23,0.98); border: 1px solid var(--line-2); border-radius: 20px;
+  box-shadow: 0 40px 110px -24px rgba(0,0,0,0.85);
+  animation: ask-full-in .22s var(--ease);
+  overflow: hidden;
+}
+@keyframes ask-full-in { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
+.ask-full .ask-side__head { border-bottom: 1px solid var(--line); }
+.ask-full__body { flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 18px; }
+.ask-full__body::-webkit-scrollbar { width: 8px; }
+.ask-full__body::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 6px; }
+.ask-full .ask-empty { max-width: 520px; margin: auto; text-align: center; }
+.ask-full .ask-intro-t { justify-content: center; }
+.ask-composer--full { border-top: 1px solid var(--line); padding: 12px 14px 6px 18px; }
+.ask-full .ask-disclaim { padding: 0 0 10px; margin: 0; }
+
+/* PINNED, NOT OVERLAID: the panel reflows the page — it reserves a right-hand column and the
+   app content shifts left into the remaining space (Gemini-in-Docs style), so the assistant is
+   an incorporated information layer, never covering what the user is working on. Desktop only;
+   on mobile the panel is a full-screen sheet (below). */
+@media (min-width: 761px) {
+  body.ask-side-open .app-chrome { padding-right: var(--ask-side-w, 384px); }
+  /* the trade terminal is a dense, fixed-width grid — squeezing it 384px collapses the chart
+     and hides the order form, so there the panel OVERLAYS instead (close it to trade) */
+  body.ask-side-open:has(.term) .app-chrome { padding-right: 0; }
+  /* the floating dock re-centres in the remaining (left) space */
+  body.ask-side-open .dock-slot { transform: translateX(calc(-50% - min(var(--ask-side-w, 384px), 92vw) / 2)); }
+}
+
+@media (prefers-reduced-motion: reduce) { .ask-pop, .ask-side, .ask-full { animation: none; } }
+
+@media (max-width: 760px) {
+  .ask-dock-wrap { width: calc(100vw - 20px); bottom: 12px; }
+  .ask-side { width: 100vw; max-width: 100vw; }
+  .ask-full { width: 100vw; height: 100dvh; border-radius: 0; border: none; }
+  body.ask-side-open .dock-slot { transform: translateX(-50%); }   /* dock is hidden on mobile anyway */
+}
+
+/* A degraded answer — the model was unreachable and this is a keyword route match. Styled as a
+   quiet warning rather than an error: the content is still mildly useful, but the user must be
+   able to tell it apart from a real answer and get back to one in a single tap. */
+.ask-a-txt.degraded{opacity:.82}
+.ask-degraded{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;
+  padding:7px 10px;border-radius:9px;font-size:12px;line-height:1.4;
+  color:#c8b98f;background:#1b1811;border:1px solid #463f26}
+.ask-degraded__retry{margin-left:auto;font-size:12px;font-weight:600;cursor:pointer;
+  padding:3px 10px;border-radius:999px;color:inherit;
+  background:transparent;border:1px solid currentColor;opacity:.9}
+.ask-degraded__retry:hover{opacity:1;background:rgba(200,185,143,.12)}
