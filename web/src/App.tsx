@@ -7,10 +7,23 @@
  */
 import { useEffect, useState } from 'react';
 import { Landing } from './screens/Landing';
+import { Epochs } from './screens/Epochs';
 import { checkAccess } from './lib/access';
 import { useAuth } from './lib/useAuth';
 
 type Status = 'anon' | 'checking' | 'denied' | 'ready';
+
+/* Dev-only gate bypass, mirroring the main app's `hence.devNoGate` so the convention is one
+   thing across both codebases. sessionStorage (not local) so it dies with the tab, and behind
+   import.meta.env.DEV so it is COMPILED OUT of production — a gate you can turn off from the
+   console is not a gate. */
+const devNoGate = () => {
+  try {
+    return import.meta.env.DEV && sessionStorage.getItem('hence.devNoGate') === '1';
+  } catch {
+    return false;
+  }
+};
 
 export function App() {
   const hasAuth = !!import.meta.env.VITE_PRIVY_APP_ID;
@@ -50,6 +63,8 @@ function Authed({
     };
   }, [ready, authenticated, address, setStatus]);
 
+  if (devNoGate()) return <Epochs />;
+
   if (!entered) {
     return (
       <Landing
@@ -61,13 +76,10 @@ function Authed({
     );
   }
 
-  return (
-    <main className="terminal">
-      {/* TODO(step 3): ticket — Avantis assets only, and the executing-address line on review.
-          That line is the seatbelt: it confirms the shielding actually engaged. If the shielded
-          wallet is unavailable the order MUST fail loudly rather than fall back to the user's
-          main wallet — failing open would publish exactly the link this product exists to hide. */}
-      <p className="terminal__todo">Terminal — next milestone.</p>
-    </main>
-  );
+  // TODO(next): the ticket, ported from Hence's TradeTicket rather than invented — Incognito
+  // has to read as the same product in a different mode. Its review step carries the
+  // executing-address line, which is the seatbelt: it confirms the shielding actually engaged.
+  // If the shielded wallet is unavailable the order MUST fail loudly rather than fall back to
+  // the main wallet — failing open would publish exactly the link this product exists to hide.
+  return <Epochs />;
 }

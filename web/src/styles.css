@@ -9,17 +9,39 @@
    host's light mode would feel like it belongs to something else. */
 
 :root {
-  --ground: #0a0b0d;
-  --surface: #121417;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.16);
-  --text: #e8eaed;
-  --dim: #9aa0a6;
-  --dimmer: #6b7075;
-  --hidden: #8ab4f8;  /* what we protect — cool, calm */
-  --public: #d9a441;  /* what we cannot — warning-adjacent, never alarming */
+  /* Hence's own tokens, copied from web/src/styles/app.css — NOT invented. Incognito has to
+     read as the same product in a different mode, the way an incognito WINDOW is still the
+     same browser. Copied rather than imported: nothing crosses the repo boundary. */
+  --bg:        #0a0a0b;
+  --bg-2:      #0c0c0e;
+  --panel:     #0e0f12;
+  --panel-2:   #141519;
+  --elevated:  #1a1b20;
+  --hover:     #1e1f25;
+  --line:      rgba(255,255,255,0.07);
+  --line-2:    rgba(255,255,255,0.11);
+  --line-3:    rgba(255,255,255,0.16);
+  --text:      #f3f3f4;
+  --dim:       #9a9aa2;
+  --dimmer:    #6a6a72;
+  --dimmest:   #46464d;
+  --up:        #5fcf91;
+  --down:      #f08d83;
+  --peach:     #f4c39a;
+  --radius:    14px;
+  --radius-sm: 9px;
+  --font:      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* The only additions. Incognito's own two colours: what we protect, and what we cannot.
+     Everything else is Hence's, so the tint reads as a mode rather than a rebrand. */
+  --hidden:    #8ab4f8;
+  --public:    #d9a441;
+
+  --ground: var(--bg);
+  --surface: var(--panel);
+  --line-strong: var(--line-3);
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --sans: var(--font);
 }
 
 * { box-sizing: border-box; }
@@ -161,3 +183,57 @@ body {
    reads as an equal outcome rather than a warning. Colour still separates them, quietly. */
 .landing__phase { color: var(--dimmer); }
 .landing__who { margin: -14px 0 0; font-size: 13px; color: var(--dimmer); font-family: var(--mono); }
+
+/* ── epoch visualiser ─────────────────────────────────────────────────────────
+   The two columns are the argument: same event, two readings. They get equal
+   width and equal weight — the point lands only if the right column is as
+   legible as the left. */
+
+.ep { max-width: 860px; margin: 0 auto; padding: 56px 24px 72px; display: flex; flex-direction: column; gap: 26px; }
+.ep__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.ep__head h1 { font-family: var(--mono); font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.02em; }
+.ep__sub { margin: 0; color: var(--dim); font-size: 14px; }
+.ep__sim {
+  margin-left: 10px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--public); border: 1px solid var(--line-2);
+  padding: 2px 7px; border-radius: 999px;
+}
+.ep__switch { display: flex; gap: 6px; }
+.ep__switch button {
+  appearance: none; background: transparent; border: 1px solid var(--line-2); color: var(--dim);
+  font-family: var(--mono); font-size: 12px; padding: 7px 12px; border-radius: var(--radius-sm); cursor: pointer;
+}
+.ep__switch button.on { background: var(--elevated); color: var(--text); border-color: var(--line-3); }
+
+.ep__bar { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; overflow: hidden; }
+.ep__barfill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, rgba(138,180,248,0.20), rgba(138,180,248,0.06)); border-right: 1px solid rgba(138,180,248,0.45); }
+.ep__barlabel { position: relative; font-size: 15px; color: var(--dim); }
+.ep__barlabel b { color: var(--hidden); font-family: var(--mono); font-size: 19px; margin-right: 8px; }
+
+.ep__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ep__col { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.ep__col h2 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 14px; }
+.ep__col--real h2 { color: var(--hidden); }
+.ep__col--seen h2 { color: var(--public); }
+.ep__col dl { margin: 0; display: grid; gap: 9px; }
+.ep__col dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.ep__col dt { color: var(--dim); font-size: 13.5px; }
+.ep__col dd { margin: 0; font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; }
+.ep__hero { margin-top: 6px; padding-top: 11px; border-top: 1px solid var(--line); }
+.ep__hero dt { color: var(--text); font-weight: 500; }
+.ep__hero dd { font-size: 18px; }
+.ep__col--real .ep__hero dd { color: var(--hidden); }
+.ep__col--seen .ep__hero dd { color: var(--public); }
+.ep__none { color: var(--dimmer); }
+.ep__note { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--dimmer); text-wrap: pretty; }
+
+.ep__book { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; display: flex; flex-direction: column; gap: 5px; }
+.ep__book b { font-family: var(--mono); font-size: 15px; }
+.ep__book span { font-size: 13px; color: var(--dimmer); text-wrap: pretty; }
+.ep__book--withheld { border-color: rgba(217,164,65,0.28); }
+.ep__book--withheld b { color: var(--public); }
+
+@media (max-width: 700px) {
+  .ep { padding: 36px 18px 56px; }
+  .ep__cols { grid-template-columns: 1fr; }
+}
