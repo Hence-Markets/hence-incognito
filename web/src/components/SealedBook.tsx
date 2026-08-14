@@ -35,6 +35,8 @@ type Props = {
   epochId?: number | null;
   /** has the keeper netted the previous epoch's book for this market? */
   prevNetted?: boolean;
+  /** how many orders the previous epoch held here — 0 means there was never a book */
+  prevCount?: number;
   /** seconds until the epoch closes and netting runs */
   secondsLeft?: number;
   /** share of the LAST epoch that crossed internally, 0–1 */
@@ -60,7 +62,7 @@ const clockLabel = (secondsLeft: number, live: boolean, sealed: number) => {
 
 export function SealedBook({
   sym, resizer, sealed = 0, sealedAll = 0, secondsLeft = 0,
-  lastCrossed = null, live = false, epochId = null, prevNetted = false,
+  lastCrossed = null, live = false, epochId = null, prevNetted = false, prevCount = 0,
 }: Props) {
   const [tab, setTab] = useState<'sealed' | 'epochs'>('sealed');
   const asideRef = useRef<HTMLElement>(null);
@@ -188,9 +190,11 @@ export function SealedBook({
               <span>Unfilled</span>
               <b>{lastCrossed == null ? '—' : `${Math.round((1 - lastCrossed) * 100)}%`}</b>
             </div>
+            {/* "awaiting keeper" over an epoch that never held an order in this market is a
+                false alarm — there is nothing there to net. An empty book says so. */}
             <div className="sealed__stat">
               <span>Epoch {epochId != null && epochId > 1 ? `#${epochId - 1}` : 'previous'}</span>
-              <b>{!live ? '—' : prevNetted ? 'netted' : 'awaiting keeper'}</b>
+              <b>{!live ? '—' : prevCount === 0 ? 'no book' : prevNetted ? 'netted' : 'awaiting keeper'}</b>
             </div>
             <p className="sealed__note">
               At close, orders are matched against each other on ciphertext. Whatever crosses

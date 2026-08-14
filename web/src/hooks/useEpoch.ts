@@ -37,6 +37,8 @@ export type EpochState = {
   epochId: number | null;
   /** true once the keeper has netted the previous epoch */
   prevNetted: boolean;
+  /** orders the previous epoch held IN THIS MARKET — 0 means there was no book to net */
+  prevCount: number;
 };
 
 const ABI = [
@@ -79,6 +81,7 @@ const EMPTY: EpochState = {
   live: false,
   epochId: null,
   prevNetted: false,
+  prevCount: 0,
 };
 
 export function useEpoch(symbol?: string | null): EpochState {
@@ -122,10 +125,12 @@ export function useEpoch(symbol?: string | null): EpochState {
         // dishonesty the sealed book exists to avoid.
         let lastCrossed: number | null = null;
         let prevNetted = false;
+        let prevCount = 0;
         if (epochId > 1n && pair != null) {
           const prev = (await client.readContract({
             address: CONTRACT, abi: ABI, functionName: 'bookStatus', args: [epochId - 1n, pair],
           })) as any;
+          prevCount = Number(prev[0]);
           prevNetted = Boolean(prev[1]);
           if (prevNetted && Boolean(prev[2])) {
             // TODO(keeper): the revealed aggregate arrives via attested decrypt, not from this
@@ -143,6 +148,7 @@ export function useEpoch(symbol?: string | null): EpochState {
           live: true,
           epochId: Number(epochId),
           prevNetted,
+          prevCount,
         });
       } catch {
         // A dead RPC must not freeze the countdown — fall back to the clock and stay honest
