@@ -13,10 +13,14 @@ import { Glyph } from '../components/Glyph';
 
 export function Landing({
   onEnter,
+  onSignIn,
   status,
+  shortAddr,
 }: {
   onEnter: () => void;
+  onSignIn: () => void;
   status: 'anon' | 'checking' | 'denied' | 'ready';
+  shortAddr?: string;
 }) {
   const d = DISCLOSURE;
   const label =
@@ -57,9 +61,19 @@ export function Landing({
 
       <p className="landing__limits">{d.limits}</p>
 
-      <button className="landing__cta" onClick={onEnter} disabled={status !== 'ready'}>
+      {/* One button, two jobs — sign in, then enter. Never show "Enter incognito" to someone
+          who is not signed in: the promise only holds once we know which address is shielded. */}
+      <button
+        className="landing__cta"
+        onClick={status === 'anon' ? onSignIn : onEnter}
+        disabled={status === 'checking' || status === 'denied'}
+      >
         {label}
       </button>
+
+      {shortAddr && status !== 'anon' ? (
+        <p className="landing__who">Signed in as {shortAddr}</p>
+      ) : null}
 
       {status === 'denied' ? (
         <p className="landing__denied">

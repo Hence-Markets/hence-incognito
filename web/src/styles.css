@@ -160,3 +160,4 @@ body {
 /* In Phase 2 the right column is not a caveat, it is half of what actually happens — so it
    reads as an equal outcome rather than a warning. Colour still separates them, quietly. */
 .landing__phase { color: var(--dimmer); }
+.landing__who { margin: -14px 0 0; font-size: 13px; color: var(--dimmer); font-family: var(--mono); }
