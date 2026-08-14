@@ -18,6 +18,7 @@ import { SealedBook } from '../components/SealedBook';
 import { useEpoch } from '../hooks/useEpoch';
 import { useShielded } from '../lib/useShielded';
 import ShieldedAcct from '../components/ShieldedAcct';
+import SealedOrders from '../components/SealedOrders';
 import { placeShieldedOrder, shieldedReady } from '../lib/order';
 import { openStream, type StreamStatus, type BookMsg, type TradesMsg } from '../lib/stream';
 import { MarketSelect, getWatch } from '../components/MarketSelect';
@@ -45,6 +46,8 @@ import { info } from '../lib/hydromancer.js';
 import { positions as pmPositions } from '../lib/polymarket.js';
 import * as market from '../lib/market.js';
 import { isAvantisSymbol } from '../lib/avantisUniverse';
+import { marketOf } from '../lib/markets';
+import type { Residual } from '../lib/order';
 import * as fmp from '../lib/fmp.js';
 import * as accounts from '../lib/accounts.js';
 import { toast } from '../lib/ui.js';
@@ -58,7 +61,11 @@ import { safeHttpUrl, safeSymbol } from '../lib/safe-html.js';
 const ORDER_TYPES = ['Market', 'Limit'] as const;
 const SLIP_PRESETS = [0.5, 1, 2, 5];   // max-slippage presets (%) for market orders
 const M_TABS = ['Markets', 'Trade', 'Account'] as const;
-const B_TABS = ['Balances', 'Positions', 'Predictions', 'Open Orders', 'Trade History', 'Order History', 'Bots'];
+/* INCOGNITO: seven tabs became one. Balances, Positions, Predictions, Open Orders, Trade
+   History, Order History and Bots were each a read of the user's Hyperliquid clearinghouse —
+   permanently empty here at best, and at worst another venue's data sitting under a bar
+   labelled "Sealed orders". The only history this app creates is the orders it sealed. */
+const B_TABS = ['Sealed orders'];
 
 function accountsList() {
   const out: { id: string; name: string }[] = [];
@@ -226,6 +233,11 @@ function PerpBody({ sym }: { sym: string }) {
   // (first-time approvals still run — toasts + the wallet popup carry the feedback)
   const [skipCfm, setSkipCfm] = useState<boolean>(() => { try { return localStorage.getItem('hence.term.skipConfirm') === '1'; } catch { return false; } });
   const [enableSheet, setEnableSheet] = useState(false);   // "Enable 1-click trading" consent open
+  /* What happens to the part of this order that finds no counterparty. Defaults to leaving it
+     unfilled, which is both the honest state on a testnet and ordinary crossing-network
+     behaviour — the alternative sends it to a public venue, which is the thing users came here
+     to avoid, so it must be chosen rather than assumed. */
+  const [resid, setResid] = useState<Residual>('unfilled');
   const [enabling, setEnabling] = useState(false);
   // An order preview belongs to the wallet that created it. Clear pending
   // confirmations if Privy changes or removes that wallet.
@@ -247,7 +259,7 @@ function PerpBody({ sym }: { sym: string }) {
      (lib/builder-waiver) and the venue's own fee is rebated server-side. The UI must say so
      AT THE MOMENT OF THE ORDER — a fee promise nobody sees while deciding is not a promise. */
   const [mtab, setMtab] = useState<(typeof M_TABS)[number]>('Markets');
-  const [btab, setBtab] = useState('Open Orders');
+  const [btab, setBtab] = useState('Sealed orders');
   const [acct, setAcct] = useState('');
   const [acctMenu, setAcctMenu] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -664,6 +676,7 @@ function PerpBody({ sym }: { sym: string }) {
   const pickPair = (s: string) => { setPaletteOpen(false); nav('/terminal/' + s.toUpperCase()); };
   const reEntry = () => {/* state-driven, no-op */};
   const mark = realMark;
+  const mkt = marketOf(pair);          // null for anything outside the three netted markets
   const tradeCoin = market.coinFor(pair);
   /* Campaign scope must key off the coin the ORDER carries, not the symbol on screen: the
      terminal shows "AAPL" while market.coinFor resolves it to "xyz:AAPL", so checking the
@@ -678,7 +691,9 @@ function PerpBody({ sym }: { sym: string }) {
   // reaches the ticket via a pasted link. Treated read-only exactly as Hence treats a
   // non-tradeable market — the UI path already exists, it just needs the venue in the test.
   const readOnlyMarket = !market.isTradeable(pair) || !isAvantisSymbol(pair);
-  const epoch = useEpoch();   // countdown + sealed count for the sealed book
+  // Per market: "6 sealed" must mean six orders that can cross with YOURS, not six spread
+  // across markets that will each net alone.
+  const epoch = useEpoch(pair);
   const shielded = useShielded();   // the address orders execute from — never the user's own
   // Percentage buttons: buying power = available collateral × the SELECTED leverage. The order flow
   // applies this leverage on HL before opening, so sizing matches what actually executes. HL still
@@ -867,7 +882,7 @@ function PerpBody({ sym }: { sym: string }) {
   // step 1 — validate + quote, then open the confirm sheet
   const submit = async () => {
     if (readOnlyMarket) {
-      toast('This market is read-only in Hence — live orders aren’t available for it yet.', { icon: 'close' });
+      toast(`${pair} is not one of the netted markets — Incognito trades BTC, ETH and SOL.`, { icon: 'close' });
       return;
     }
     if (!signer.ready) {
@@ -875,21 +890,23 @@ function PerpBody({ sym }: { sym: string }) {
       if (auth.ready && !auth.authenticated) auth.login();
       return;
     }
-    if (!hl.loaded) {
-      toast(hl.unavailable ? 'Hyperliquid account data is unavailable — trading is paused' : 'Verifying your Hyperliquid account…', { icon: 'info' });
-      return;
-    }
+    /* INCOGNITO: two gates removed here, and both of them BLOCKED REAL ORDERS.
+
+       The first waited on `hl.loaded` — the user's Hyperliquid account snapshot. An incognito
+       order never touches Hyperliquid, so this made a healthy order fail whenever HL was slow
+       or the trader simply had no HL account, with a message about a venue they were not using.
+
+       The second was marginShortfall() against `hl.available`: it refused to seal an order
+       unless the trader held collateral on Hyperliquid. Nothing is escrowed here — the order is
+       an encrypted intent — so this rejected everyone starting from zero, which is everyone.
+
+       Both are gone. What is left is what actually constrains a sealed order. */
     const usd = Number(amt.trim());
     if (!Number.isFinite(usd) || usd <= 0) { toast('Enter a valid amount to trade', { icon: 'card' }); return; }
-    // Hyperliquid rejects opening orders below $10 notional; surface it before signing.
-    if (!reduceOnly && usd < 10) { toast('Hyperliquid minimum order value is $10.', { icon: 'card' }); return; }
-    // Same rule the run sheet enforces (lib/thesis-sizing.marginShortfall). The ticket already
-    // blocks on min-notional and bad prices; an order the venue will reject for collateral
-    // belongs in that list rather than being discovered after the signature.
-    if (!reduceOnly && hl.loaded) {
-      const short = marginShortfall(usd / Math.max(1, lev), hl.available);
-      if (short) { toast(short, { icon: 'card' }); return; }
-    }
+    // The size is encrypted as whole dollars, so anything under $1 rounds to nothing on chain.
+    // There is no venue minimum to enforce: Avantis' $100 floor applies to a routed RESIDUAL,
+    // which is an aggregate — a small order can be part of one without meeting it alone.
+    if (usd < 1) { toast('Minimum order value is $1.', { icon: 'card' }); return; }
     if (!(mark > 0)) { toast('No live price for this market yet', { icon: 'close' }); return; }
     const limitPrice = otype === 'Limit' ? Number(limitInput.trim()) : undefined;
     if (otype === 'Limit' && (!Number.isFinite(limitPrice) || (limitPrice ?? 0) <= 0)) {
@@ -903,9 +920,12 @@ function PerpBody({ sym }: { sym: string }) {
       slippage: otype === 'Market' ? slipPct / 100 : undefined,
     };
     try {
-      const q = await quoteOrder(params);
-      if (!(q.size > 0)) { toast('Amount too small — size rounds to zero', { icon: 'close' }); return; }
-      setConfirm({ address: signer.address!, params, size: q.size, price: q.price, lev, cross: effCross });
+      // No venue quote: nothing is being filled at a price right now. The order seals at its
+      // notional and nets against other traders at the epoch close, so "size" here is simply
+      // what that notional buys at the current mark — shown for orientation, not as a fill.
+      const size = usd / mark;
+      if (!(size > 0)) { toast('Amount too small — size rounds to zero', { icon: 'close' }); return; }
+      setConfirm({ address: signer.address!, params, size, price: mark, lev, cross: effCross });
     } catch (e: any) {
       toast(e?.message || 'Could not prepare order', { icon: 'close' });
     }
@@ -954,6 +974,7 @@ function PerpBody({ sym }: { sym: string }) {
           side: confirm.params.isBuy ? 'long' : 'short',
           size: usd,
           leverage: confirm.lev,
+          residual: resid,
         },
         // The shielded signer. getClient() switches the embedded wallet to Base first and
         // returns null on any failure, so a signer we could not reach places nothing rather
@@ -1204,7 +1225,9 @@ function PerpBody({ sym }: { sym: string }) {
           {/* INCOGNITO: the order book is replaced, not hidden. Avantis is vault-backed and
               oracle-priced so there is no CLOB to render, and our own flow is encrypted until
               the epoch closes — the panel shows what is actually knowable. */}
-          <SealedBook sym={pair} resizer={rsz('book', 'l')} sealed={epoch.sealed} secondsLeft={epoch.secondsLeft} lastCrossed={epoch.lastCrossed} live={epoch.live} />
+          <SealedBook sym={pair} resizer={rsz('book', 'l')} sealed={epoch.sealed} sealedAll={epoch.sealedAll}
+            secondsLeft={epoch.secondsLeft} lastCrossed={epoch.lastCrossed} live={epoch.live}
+            epochId={epoch.epochId} prevNetted={epoch.prevNetted} />
 
           {/* order entry + account card (right column) */}
           <aside className="term__entry">
@@ -1220,8 +1243,21 @@ function PerpBody({ sym }: { sym: string }) {
                 <div className="term__otabs">{ORDER_TYPES.map((o) => <button key={o} className={o === otype ? 'on' : ''} onClick={() => setOtype(o)}>{o}</button>)}</div>
               </div>
               {readOnlyMarket && <div className="term__cfm-note"><Icon name="alert" size={12} /> Read-only market · live orders aren’t available for this asset yet.</div>}
-              <div className="term__avail"><span>Available to Trade</span><b>{hl.connected ? (hl.loaded ? <>{hl.available.toLocaleString(undefined, { maximumFractionDigits: 2 })} <span className="term__usdc">USDC</span></> : hl.unavailable ? 'Unavailable' : <Skeleton w={64} h={13} />) : '—'}</b></div>
-              <div className="term__avail"><span>Current Position</span><b>{hl.unavailable || !hl.connected ? '—' : myPos ? `${myPos.side === 'Short' ? '-' : ''}${myPos.sz} ${pair}` : hl.loaded ? `0 ${pair}` : <Skeleton w={50} h={13} />}</b></div>
+              {/* "Available to Trade" and "Current Position" both read the Hyperliquid
+                  clearinghouse. Neither has an answer here: no collateral is posted for a
+                  sealed order, and no position exists until a residual settles at a venue.
+                  What a trader actually needs to know at this point is how much company their
+                  order will have when the epoch closes. */}
+              <div className="term__avail">
+                <span title="Orders already sealed into this epoch for this market. They are what yours can cross against.">Sealed in {pair} this epoch</span>
+                <b>{epoch.live ? epoch.sealed : '—'}</b>
+              </div>
+              <div className="term__avail">
+                <span title="Time until the epoch closes and netting runs.">Epoch closes</span>
+                <b>{!epoch.live ? '—' : epoch.secondsLeft > 0
+                  ? `${Math.floor(epoch.secondsLeft / 60)}:${String(epoch.secondsLeft % 60).padStart(2, '0')}`
+                  : 'awaiting keeper'}</b>
+              </div>
               {/* Leverage + margin mode as compact chips (trade.xyz anatomy) — the slider
                   lives in the Adjust Leverage popup, not permanently in the column. */}
               {!readOnlyMarket && (
@@ -1247,7 +1283,7 @@ function PerpBody({ sym }: { sym: string }) {
                         onChange={(e) => { const v = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10); setLev(Number.isFinite(v) ? Math.min(Math.max(1, v), maxLev) : 1); }} aria-label="Leverage value" />
                     </div>
                     <div className="term__levpop-row"><span>Buying power</span><b>{hl.connected && hl.loaded ? fmtUsd(hl.available * lev) : '—'}</b></div>
-                    {levDirty && hl.connected && <div className="term__lev-sub">Not on Hyperliquid yet — confirm now, or it applies with your next order.</div>}
+                    {levDirty && <div className="term__lev-sub">Applies to the residual if you route it out; sealed orders net at notional.</div>}
                     <button className="term__levpop-cta" disabled={levBusy}
                       onClick={async () => { if (hl.connected && levDirty && signer.ready) { await doSetLeverage(); } setLevSheet(false); }}>
                       {levBusy ? 'Signing…' : hl.connected && levDirty && signer.ready ? `Confirm ${lev}×` : 'Done'}
@@ -1271,64 +1307,35 @@ function PerpBody({ sym }: { sym: string }) {
               </div>
             </div>
 
+            {/* INCOGNITO: the order summary.
+
+                What was here described a Hyperliquid order — liquidation price, margin at
+                leverage, max slippage, "Est. fee at 0.045%". None of it applies: this order is
+                an encrypted intent netted against other traders, with no collateral posted, no
+                position to liquidate and no taker fee. Leaving those rows would have been the
+                account card's mistake again, in the one panel the user reads before committing. */}
             <div className="term__pta">
-              {(() => {
-                /* an open position has a REAL liq price; while composing an order there is
-                   only an estimate (lib/liq-estimate) — before this, the row read the open
-                   position ONLY, so every flat account saw a permanent dash */
-                if (myPos?.liqPx) return <div className="term__pta-row"><span>Liquidation Price</span><b>{fmtPx(myPos.liqPx)}</b></div>;
-                const entry = otype === 'Limit' ? (parseFloat(limitInput) || 0) : mark;
-                const est = (parseFloat(amt) || 0) > 0 ? estLiqPrice(entry, lev, maxLev, side === 'Long') : null;
-                return (
-                  <div className="term__pta-row">
-                    <span title="Estimated for this order at the current mark — assumes it opens alone with its own margin. Cross margin moves it further away, never closer.">Liquidation Price</span>
-                    <b>{est ? '≈ ' + fmtPx(est) : '—'}</b>
-                  </div>
-                );
-              })()}
-              <div className="term__pta-row"><span>Order Value</span><b>{fmtUsd(parseFloat(amt) || 0)}</b></div>
-              {/* Amount = NOTIONAL (order value), like Hyperliquid's own ticket — leverage doesn't
-                  scale the order, it divides the collateral the order locks. This row is what makes
-                  the slider visibly DO something ("10× ⇒ $10 order locks $1"). */}
-              {/* when margin exceeds available the VALUE turns amber and the submit button
-                  carries the why — a sentence inside a dense row list was clutter */}
-              <div className={'term__pta-row' + (marginShort ? ' term__pta-row--short' : '')}>
-                <span title={`You're entering the order's full size. At ${lev}× leverage it locks 1/${lev} of that as margin — leverage lowers the collateral needed, it doesn't grow the order.`}>
-                  Margin required · {lev}×</span>
-                <b>{fmtUsd(marginReq)}</b>
+              <div className="term__pta-row">
+                <span>Market</span>
+                <b>{mkt ? `${mkt.sym}/USD · Avantis #${mkt.pair}` : '—'}</b>
               </div>
-              {otype === 'Market'
-                ? <div className="term__pta-row term__pta-row--slip">
-                    <span title="The worst price your market order will accept. Tighter = a better price but the order may not fill on a fast move.">Max slippage</span>
-                    <span className="term__slip">{SLIP_PRESETS.map((s) => <button key={s} className={s === slipPct ? 'on' : ''} onClick={() => setSlipPct(s)}>{s}%</button>)}</span>
-                  </div>
-                : <div className="term__pta-row"><span>Max slippage</span><b>—</b></div>}
-              {(() => {
-                const rate = 0.045 + (builderEnabled ? cfg!.hlBuilderFee / 1000 : 0);   // taker % + Hence builder %
-                const fee = (parseFloat(amt) || 0) * (rate / 100);
-                /* A waived fee gets its OWN block rather than a row in the list: the point of
-                   the campaign is that the trader notices before they commit, and a row among
-                   six identical rows is not noticing. The struck price stays visible — the
-                   saving only reads as one against the number it replaced. */
-                if (xyzFree) {
-                  return (
-                    <div className="term__feebox">
-                      <div className="term__feebox-l">
-                        <span>Est. fee</span>
-                        <b><s>{fee > 0 ? fmtUsd(fee) : '0.045%'}</s> <em>FREE</em></b>
-                      </div>
-                      <span className="term__feebox-note">No Hence fee on trade.xyz — the venue fee is rebated to your balance.</span>
-                    </div>
-                  );
-                }
-                return (
-                  <div className="term__pta-row">
-                    <span title={builderEnabled ? 'Hyperliquid taker fee (0.045%) + the Hence fee (0.04%, only charged if you approved it on your first order).' : 'Hyperliquid taker fee.'}>
-                      Est. fee at {parseFloat(rate.toFixed(4))}%</span>
-                    <b>{fee > 0 && fee < 0.005 ? '<$0.01' : fmtUsd(fee)}</b>
-                  </div>
-                );
-              })()}
+              <div className="term__pta-row"><span>Order value</span><b>{fmtUsd(parseFloat(amt) || 0)}</b></div>
+              <div className="term__pta-row">
+                <span title="Orders are batched into fixed windows and netted together when the window closes. Yours stays encrypted until then.">Seals into</span>
+                <b>{epoch.epochId != null ? `Epoch #${epoch.epochId}` : '—'}</b>
+              </div>
+              <div className="term__pta-row term__pta-row--slip">
+                <span title="If nobody takes the other side of your order, the remainder either goes unfilled or is routed out to Avantis, where it is public like any venue order.">If unmatched</span>
+                <span className="term__slip term__resid">
+                  <button className={resid === 'unfilled' ? 'on' : ''} onClick={() => setResid('unfilled')}>Return unfilled</button>
+                  <button className={resid === 'avantis' ? 'on' : ''} onClick={() => setResid('avantis')}>Route to Avantis</button>
+                </span>
+              </div>
+              <div className="term__residnote">
+                {resid === 'unfilled'
+                  ? 'No counterparty, no fill — nothing is escrowed, so nothing comes back. Retry next epoch.'
+                  : 'The unmatched remainder opens on Avantis, publicly, like any other venue order.'}
+              </div>
             </div>
 
             <div className="term__ai">
@@ -1406,27 +1413,21 @@ function PerpBody({ sym }: { sym: string }) {
           <div className="term__bottom">
             {rsz('bottom', 't')}
             <div className="term__bottom-bar">
-              <div className="term__bottom-tabs">{B_TABS.map((tb) => {
-                // live counts on the tabs (trade.xyz/HL anatomy) — only when >0, no "(0)" noise
-                const n = hl.connected && hl.loaded
-                  ? tb === 'Positions' ? hl.positions.length
-                    : tb === 'Predictions' ? (preds?.length || 0)
-                      : tb === 'Open Orders' ? hl.orders.length + hl.triggers.length
-                        : tb === 'Balances' ? (hl.accountValue > 0 ? 1 : 0) : 0
-                  : 0;
-                return <button key={tb} className={tb === btab ? 'on' : ''} onClick={() => setBtab(tb)}>{tb}{n > 0 ? ` (${n})` : ''}</button>;
-              })}</div>
+              <div className="term__bottom-tabs">
+                {B_TABS.map((tb) => (
+                  <button key={tb} className={tb === btab ? 'on' : ''} onClick={() => setBtab(tb)}>{tb}</button>
+                ))}
+              </div>
               <div className="term__bottom-tools">
-                <span className="muted">Sealed orders · Base {import.meta.env.VITE_NETWORK === 'mainnet' ? 'mainnet' : 'Sepolia'}</span>
-                {btab === 'Positions' && hl.positions.length > 0 && <button className="term__closeall" disabled={closingAll} onClick={() => setCloseAllCfm(true)}>
-              {closingAll ? 'Closing…' : 'Close all'}
-            </button>}
+                <span className="muted">
+                  {shielded.address
+                    ? `${shielded.address.slice(0, 6)}…${shielded.address.slice(-4)} · Base ${import.meta.env.VITE_NETWORK === 'mainnet' ? 'mainnet' : 'Sepolia'}`
+                    : `Base ${import.meta.env.VITE_NETWORK === 'mainnet' ? 'mainnet' : 'Sepolia'}`}
+                </span>
               </div>
             </div>
             <div className="term__bottom-body">
-              <BottomBody btab={btab} hl={hl} addr={acctAddr} preds={preds} onCancel={doCancel} cancelling={cancelling} closing={closing}
-                onClose={(p: any) => { if (skipCloseCfm) void doClose(p, 100); else { setClosePct(100); setCloseCfm(p); } }}
-                onTpsl={(p: any) => { setTpIn(''); setSlIn(''); setTpslFor(p); }} />
+              <SealedOrders shieldedAddress={shielded.address} currentEpoch={epoch.epochId} />
             </div>
           </div>
 
@@ -1450,21 +1451,29 @@ function PerpBody({ sym }: { sym: string }) {
                 <button className="term__cfm-x" disabled={placing} onClick={() => setConfirm(null)}><Icon name="close" size={16} /></button>
               </div>
               <div className="term__cfm-rows">
-                <div><span>Size</span><b>{c.size} {coin}</b></div>
-                <div><span>{c.params.type === 'Market' ? (isLong ? 'Max price' : 'Min price') : 'Limit price'}</span><b>{fmtPx(c.price)}</b></div>
                 <div><span>Order value</span><b>{fmtUsd(c.params.usd)}</b></div>
-                {!c.params.reduceOnly && <div><span>Leverage</span><b>{c.lev}× {c.cross ? 'cross' : 'isolated'}</b></div>}
+                <div><span>Reference price</span><b>{fmtPx(c.price)}</b></div>
+                <div><span>Seals into</span><b>Epoch {epoch.epochId ?? '—'}</b></div>
+                <div><span>If unmatched</span><b>{resid === 'unfilled' ? 'Return unfilled' : 'Route to Avantis'}</b></div>
+                {/* THE SEATBELT. The spec calls for an executing-address line here and this is
+                    why: it is the last screen before signing, and it is the only moment a user
+                    can confirm that shielding actually engaged rather than silently failed
+                    open. If this ever showed the connected wallet, the trade would be
+                    permanently attributable and no later fix removes it from the chain. */}
+                <div className="term__cfm-shield">
+                  <span>Executing as</span>
+                  <b>{shielded.address ? `${shielded.address.slice(0, 6)}…${shielded.address.slice(-4)}` : '—'} <em>shielded</em></b>
+                </div>
               </div>
               {/* quiet fine print, trade.xyz-style — plain facts, no warning chrome; the fee
                   also lives as a sidenote in the entry column so this stays one dim line */}
+              {/* The slippage and fee lines that were here described a Hyperliquid fill: a taker
+                  fee, a builder fee, a price band. None of them apply — nothing fills at a
+                  price right now, and the only cost is Inco's input fee plus gas. */}
               <div className="term__cfm-fine">
-                {c.params.type === 'Market' && <>Fills at best price, up to {((c.params.slippage ?? MARKET_PRICE_PROTECTION) * 100).toFixed(1)}% from mark.</>}
-                {!c.params.reduceOnly && String(c.params.coin || '').startsWith('xyz:') && (cfg?.xyzRebate || rebate != null)
-                  ? <> Fees: <s>0.045% + {builderPct}</s> <em className="term__free">FREE</em> — no Hence fee on trade.xyz, and the venue fee is rebated to your balance.</>
-                  : builderEnabled && !c.params.reduceOnly && <> Fee 0.045% + {builderPct} Hence{signer.address && builderSessionRef.current[signer.address] !== 'approved' ? ' (first order signs the fee cap — revocable anytime)' : ''}.</>}
+                Your size is encrypted in this browser and stays sealed until the epoch closes.
+                Base {import.meta.env.VITE_NETWORK === 'mainnet' ? 'mainnet' : 'Sepolia'} · costs the Inco input fee plus gas.
               </div>
-              {isTestnet() && <div className="term__cfm-fine">Developer testnet mode — this order executes on Hyperliquid testnet.</div>}
-              {!isTestnet() && !agent.hasAgent && <div className="term__cfm-fine">Your first order approves a 1-click trading key — it can trade, never withdraw.</div>}
               <div className="term__cfm-actions">
                 <label className="term__cfm-skip"><input type="checkbox" checked={skipCfm} onChange={(e) => { setSkipCfm(e.target.checked); try { localStorage.setItem('hence.term.skipConfirm', e.target.checked ? '1' : ''); } catch { /* storage off */ } }} /> Don't show again</label>
                 <button className="term__cfm-cancel" disabled={placing} onClick={() => setConfirm(null)}>Cancel</button>

@@ -32,11 +32,13 @@ const TABS = [
   { id: 'watch', label: 'Watch' },
 ];
 
-function venueOf(a: any) {
-  const d = (a.dex || '').toLowerCase();
-  if (d === 'xyz' || d === 'trade.xyz') return { tag: 'XYZ', cls: 'xyz' };
-  if (!d) return { tag: 'HL', cls: 'hl' };
-  return { tag: d.slice(0, 4).toUpperCase(), cls: 'hip3' };
+/* INCOGNITO: the venue badge names where the order EXECUTES, which here is always Avantis.
+   It previously showed HL or XYZ, inherited from the fork — accurate about where the PRICE
+   comes from and wrong about the thing a venue column is read for. Someone glancing at this
+   list concluded their order went to Hyperliquid, from their own address. The price source is
+   still worth saying, so it moves into the row's title where it cannot be misread as routing. */
+function venueOf(_a: any) {
+  return { tag: 'AVANTIS', cls: 'avantis' };
 }
 function fmtBig(v: number) {
   if (v == null || isNaN(v) || v <= 0) return '—';
@@ -170,7 +172,8 @@ export function MarketSelect({ onPick, onClose }: { onPick: (s: string) => void;
                 <button key={a.coin} className={'msel-row' + (i === sel ? ' on' : '')} onMouseMove={() => i !== sel && setSel(i)} onClick={() => onPick(a.sym)}>
                   <span className={'msel-star' + (watch.has(a.sym) ? ' on' : '')} onClick={(e) => { e.stopPropagation(); toggleWatch(a.sym); }}><Icon name="bookmark" size={13} /></span>
                   <span className="msel-asset"><Logo sym={a.sym} size={26} /><span className="msel-asset-t"><span className="msel-sym">{a.sym}<span className="msel-perp">PERP</span></span><span className="msel-name">{a.name || a.sym}</span></span></span>
-                  <span className="msel-tags"><span className={'msel-venue msel-venue--' + v.cls}>{v.tag}</span>{a.maxLev ? <span className="msel-lev">{a.maxLev}x</span> : null}</span>
+                  <span className="msel-tags"><span className={'msel-venue msel-venue--' + v.cls}
+                      title="Executes on Avantis (Base). Price shown is a reference feed — Avantis is oracle-priced.">{v.tag}</span>{a.maxLev ? <span className="msel-lev">{a.maxLev}x</span> : null}</span>
                   <span className="msel-price"><b>{market.fmtPrice(t.price)}</b><span className={up ? 'up' : 'down'}>{fmtPct(t.chgPct)}</span></span>
                   <span className="msel-oi">{bd ? fmtBig(bd.oiNotional) : bd === null ? '—' : <span className="msel-skel" />}</span>
                 </button>

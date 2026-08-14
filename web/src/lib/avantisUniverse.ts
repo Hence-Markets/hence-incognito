@@ -14,6 +14,7 @@
  * Hence names it on the xyz dex.
  */
 import { fetchPairs } from './avantis';
+import { verifyPairIndices, marketSymbols, isIncognitoMarket } from './markets';
 // @ts-ignore — JS module
 import { ingestAvantis } from './market.js';
 
@@ -35,6 +36,9 @@ export function loadAvantisUniverse(): Promise<Set<string>> {
         set.add(String(p.from).toUpperCase());
       }
       allow = set;
+      // A wrong pair index routes a residual to the WRONG MARKET and nothing errors. Check the
+      // hardcoded three against what Avantis actually reports, every load.
+      verifyPairIndices(pairs);
       // Push them INTO the universe, don't just filter it afterwards. Filtering left the
       // terminal at the mercy of Hence's xyz dex: when that failed to load, Avantis-listed
       // equities disappeared from a venue that lists them.
@@ -63,17 +67,23 @@ export function loadAvantisUniverse(): Promise<Set<string>> {
 /** Has the allowlist resolved? Before it does, nothing is filtered. */
 export const avantisReady = () => !!allow && allow.size > 0;
 
+/* THE OFFERED UNIVERSE IS THE THREE NETTING MARKETS, not all 105 Avantis symbols.
+   Everything Avantis lists is still *tradeable in principle*, but offering it here would spread
+   a small book across a hundred markets and leave nothing to cross — see lib/markets.ts. This
+   is the one place that narrowing happens, so widening it later is a one-line change. */
 export function isAvantisSymbol(sym?: string | null): boolean {
+  return isIncognitoMarket(sym);
+}
+
+/** The full Avantis listing, for copy that needs to say what the venue supports rather than
+ *  what we currently offer. Not used for filtering. */
+export const isAvantisListed = (sym?: string | null): boolean => {
   if (!avantisReady()) return true;
   return !!sym && allow!.has(String(sym).toUpperCase());
-}
+};
 
 export const avantisSymbols = (): string[] => (allow ? [...allow] : []);
 
-/** Watchlist seed, intersected with what Avantis actually lists.
- *
- *  CORRECTED: I first stripped every equity here, assuming Avantis was crypto-only. It is not
- *  — it lists NVDA, AAPL, TSLA, MSFT, AMD, AMZN, AVGO, BABA, COIN, commodities (BRENT) and FX.
- *  Seven of Hence's ten defaults are genuinely tradeable; only GOOGL, GOLD and SP500 are not.
- *  Checked against GET /v2/pairs rather than assumed. */
-export const INCOGNITO_WATCH = ['BTC', 'ETH', 'SOL', 'NVDA', 'AAPL', 'TSLA', 'MSFT', 'EUR'];
+/** The watchlist IS the tradable set here — three markets, so there is nothing to seed beyond
+ *  them. (Avantis lists 105 symbols including NVDA, AAPL and FX; we offer three on purpose.) */
+export const INCOGNITO_WATCH = marketSymbols();

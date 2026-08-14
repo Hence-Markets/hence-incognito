@@ -1,4 +1,5 @@
 import { track } from './analytics';
+import { marketSymbols, isIncognitoMarket } from './markets';
 /* =========================================================
    watch.ts — the ONE source of truth for the per-user watchlist.
 
@@ -24,7 +25,11 @@ const WATCH_KEY = 'hence.watch.v1';
 // edit); a user who deliberately empties their list stores '[]', so defaults never come back.
 // INCOGNITO: Avantis DOES list equities (NVDA/AAPL/TSLA/MSFT/AMD/AMZN/COIN…), so seven of
 // Hence's ten defaults survive. Only GOOGL, GOLD and SP500 are absent and were swapped out.
-export const DEFAULT_WATCH = ['NVDA', 'AAPL', 'TSLA', 'MSFT', 'BTC', 'ETH', 'SOL', 'EUR'];
+export /* INCOGNITO: the watchlist is the tradable set — the three netted markets. Hence's ten
+   defaults included GOOGL, GOLD and SP500, which Avantis does not list under those names, and
+   seven more that it does list but we deliberately do not offer (see lib/markets.ts: netting
+   needs flow to concentrate). A strip of chips you cannot trade is an invitation to click one. */
+const DEFAULT_WATCH = marketSymbols();
 
 /** ordered list of watched tickers (newest first). */
 export function watchList(): string[] {
@@ -35,7 +40,11 @@ export function watchList(): string[] {
       return DEFAULT_WATCH.slice();
     }
     const v = JSON.parse(raw || '[]');
-    return Array.isArray(v) ? v.map((s) => String(s).toUpperCase()) : [];
+    if (!Array.isArray(v)) return [];
+    /* Prune anything outside the netted markets. DEFAULT_WATCH only applies on a FIRST run, so
+       without this every browser that ever loaded the app keeps a strip of chips it can no
+       longer trade — and the demo laptop is exactly such a browser. */
+    return v.map((s) => String(s).toUpperCase()).filter(isIncognitoMarket);
   } catch { return []; }
 }
 

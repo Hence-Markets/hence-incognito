@@ -4,6 +4,11 @@
  * is in. A demo that cannot be told apart from the real thing is the one thing this product
  * must not ship, so the flag is surfaced rather than hidden.
  *
+ * PER MARKET. Netting happens per market, so "orders sealed" has to mean sealed in THIS market
+ * — an epoch-wide count would tell a BTC trader that six orders are in the book when five of
+ * them are SOL and nothing will cross. It reports both, because the epoch-wide figure is the
+ * honest size of the anonymity set while the per-market figure is what will actually net.
+ *
  * Read-only: no wallet, no signing, no keeper involvement. That is why this piece could land
  * before shielded wallets exist — it proves the app is talking to the deployed contract using
  * nothing but a public RPC.
@@ -11,6 +16,7 @@
 import { useEffect, useState } from 'react';
 import { createPublicClient, http, type Address } from 'viem';
 import { baseSepolia, base } from 'viem/chains';
+import { pairIndex } from '../lib/markets';
 
 const EPOCH_SECONDS = Number(import.meta.env.VITE_EPOCH_SECONDS ?? 300);
 const CONTRACT = (import.meta.env.VITE_INCOGNITO_CONTRACT ?? '').trim() as Address | '';
@@ -19,22 +25,35 @@ const IS_MAINNET = import.meta.env.VITE_NETWORK === 'mainnet';
 export type EpochState = {
   /** seconds until the open epoch closes and netting runs */
   secondsLeft: number;
-  /** orders sealed in the open epoch */
+  /** orders sealed in the open epoch, IN THIS MARKET — what can actually cross */
   sealed: number;
+  /** orders sealed across every market this epoch — the anonymity set */
+  sealedAll: number;
   /** share of the LAST epoch that crossed internally, 0–1, or null if unknown */
   lastCrossed: number | null;
   /** true once these numbers come from the chain rather than a local clock */
   live: boolean;
   /** the open epoch id, when known */
   epochId: number | null;
+  /** true once the keeper has netted the previous epoch */
+  prevNetted: boolean;
 };
 
 const ABI = [
   { type: 'function', name: 'currentEpoch', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint64' }] },
-  { type: 'function', name: 'epochSeconds', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint64' }] },
   {
     type: 'function', name: 'orderCount', stateMutability: 'view',
     inputs: [{ name: 'epId', type: 'uint64' }], outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function', name: 'orderCountIn', stateMutability: 'view',
+    inputs: [{ name: 'epId', type: 'uint64' }, { name: 'pair', type: 'uint16' }],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function', name: 'bookStatus', stateMutability: 'view',
+    inputs: [{ name: 'epId', type: 'uint64' }, { name: 'pair', type: 'uint16' }],
+    outputs: [{ name: 'count', type: 'uint256' }, { name: 'netted', type: 'bool' }, { name: 'revealed', type: 'bool' }],
   },
   {
     type: 'function', name: 'epochs', stateMutability: 'view',
@@ -44,11 +63,6 @@ const ABI = [
       { name: 'closesAt', type: 'uint64' },
       { name: 'orderCount', type: 'uint256' },
       { name: 'netted', type: 'bool' },
-      { name: 'sumLongs', type: 'bytes32' },
-      { name: 'sumShorts', type: 'bytes32' },
-      { name: 'matched', type: 'bytes32' },
-      { name: 'residual', type: 'bytes32' },
-      { name: 'revealed', type: 'bool' },
     ],
   },
 ] as const;
@@ -57,14 +71,19 @@ const client = CONTRACT
   ? createPublicClient({ chain: IS_MAINNET ? base : baseSepolia, transport: http() })
   : null;
 
-export function useEpoch(): EpochState {
-  const [state, setState] = useState<EpochState>({
-    secondsLeft: EPOCH_SECONDS,
-    sealed: 0,
-    lastCrossed: null,
-    live: false,
-    epochId: null,
-  });
+const EMPTY: EpochState = {
+  secondsLeft: EPOCH_SECONDS,
+  sealed: 0,
+  sealedAll: 0,
+  lastCrossed: null,
+  live: false,
+  epochId: null,
+  prevNetted: false,
+};
+
+export function useEpoch(symbol?: string | null): EpochState {
+  const [state, setState] = useState<EpochState>(EMPTY);
+  const pair = pairIndex(symbol);
 
   useEffect(() => {
     let alive = true;
@@ -85,35 +104,46 @@ export function useEpoch(): EpochState {
     const read = async () => {
       try {
         const epochId = await client.readContract({ address: CONTRACT, abi: ABI, functionName: 'currentEpoch' });
-        const [ep, sealed] = await Promise.all([
+        const [ep, sealedAll, sealedHere] = await Promise.all([
           client.readContract({ address: CONTRACT, abi: ABI, functionName: 'epochs', args: [epochId] }),
           client.readContract({ address: CONTRACT, abi: ABI, functionName: 'orderCount', args: [epochId] }),
+          pair == null
+            ? Promise.resolve(0n)
+            : client.readContract({ address: CONTRACT, abi: ABI, functionName: 'orderCountIn', args: [epochId, pair] }),
         ]);
         if (!alive) return;
 
         const closesAt = Number((ep as any)[1]);
         const left = Math.max(0, closesAt - Math.floor(Date.now() / 1000));
 
-        // lastCrossed stays NULL until the previous epoch is both netted AND revealed. The
-        // totals are euint handles until then — decrypting them is the keeper's job, not the
-        // browser's, and inventing a number here would be exactly the dishonesty the sealed
-        // book exists to avoid.
+        // lastCrossed stays NULL until the previous epoch's book for THIS market is both netted
+        // and revealed. The totals are euint handles until then — decrypting them is the
+        // keeper's job, not the browser's, and inventing a number here would be exactly the
+        // dishonesty the sealed book exists to avoid.
         let lastCrossed: number | null = null;
-        if (epochId > 1n) {
+        let prevNetted = false;
+        if (epochId > 1n && pair != null) {
           const prev = (await client.readContract({
-            address: CONTRACT, abi: ABI, functionName: 'epochs', args: [epochId - 1n],
+            address: CONTRACT, abi: ABI, functionName: 'bookStatus', args: [epochId - 1n, pair],
           })) as any;
-          const netted = Boolean(prev[3]);
-          const revealed = Boolean(prev[8]);
-          if (netted && revealed) {
-            // TODO(keeper): the revealed aggregate arrives via attested decrypt, not from
-            // this call — the on-chain value is still a handle. Wire it when the keeper
-            // publishes it. Until then this stays null, which the UI renders as "—".
+          prevNetted = Boolean(prev[1]);
+          if (prevNetted && Boolean(prev[2])) {
+            // TODO(keeper): the revealed aggregate arrives via attested decrypt, not from this
+            // call — the on-chain value is still a handle. Wire it when the keeper publishes it.
+            // Until then this stays null, which the UI renders as "—".
             lastCrossed = null;
           }
         }
 
-        setState({ secondsLeft: left, sealed: Number(sealed), lastCrossed, live: true, epochId: Number(epochId) });
+        setState({
+          secondsLeft: left,
+          sealed: Number(sealedHere),
+          sealedAll: Number(sealedAll),
+          lastCrossed,
+          live: true,
+          epochId: Number(epochId),
+          prevNetted,
+        });
       } catch {
         // A dead RPC must not freeze the countdown — fall back to the clock and stay honest
         // about not being live.
@@ -130,7 +160,7 @@ export function useEpoch(): EpochState {
       clearInterval(poll);
       clearInterval(tick);
     };
-  }, []);
+  }, [pair]);
 
   return state;
 }

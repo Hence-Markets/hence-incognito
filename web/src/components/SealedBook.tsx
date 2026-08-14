@@ -27,8 +27,14 @@ const BOOK_RAIL = 34;
 type Props = {
   sym: string;
   resizer?: React.ReactNode;
-  /** orders sealed in the open epoch */
+  /** orders sealed in the open epoch IN THIS MARKET — what can actually cross with yours */
   sealed?: number;
+  /** orders sealed across every market this epoch — the anonymity set */
+  sealedAll?: number;
+  /** the open epoch id, when known */
+  epochId?: number | null;
+  /** has the keeper netted the previous epoch's book for this market? */
+  prevNetted?: boolean;
   /** seconds until the epoch closes and netting runs */
   secondsLeft?: number;
   /** share of the LAST epoch that crossed internally, 0–1 */
@@ -52,7 +58,10 @@ const clockLabel = (secondsLeft: number, live: boolean, sealed: number) => {
     : { big: 'open', sub: 'starts on the first order' };
 };
 
-export function SealedBook({ sym, resizer, sealed = 0, secondsLeft = 0, lastCrossed = null, live = false }: Props) {
+export function SealedBook({
+  sym, resizer, sealed = 0, sealedAll = 0, secondsLeft = 0,
+  lastCrossed = null, live = false, epochId = null, prevNetted = false,
+}: Props) {
   const [tab, setTab] = useState<'sealed' | 'epochs'>('sealed');
   const asideRef = useRef<HTMLElement>(null);
   const prevW = useRef<string>('');
@@ -128,6 +137,15 @@ export function SealedBook({ sym, resizer, sealed = 0, secondsLeft = 0, lastCros
                 </ul>
               )}
 
+              {/* Netting is per market, so the count that matters is THIS market's. The
+                  epoch-wide figure is still worth showing — it is the size of the crowd the
+                  shielded address blends into, which is a different property from crossing. */}
+              {sealedAll > sealed && (
+                <div className="sealed__stat sealed__stat--all">
+                  <span>Across all markets</span><b>{sealedAll}</b>
+                </div>
+              )}
+
               <p className="sealed__note">
                 Sizes and owners stay encrypted until the epoch closes. This is not a price
                 ladder — {sym} is oracle-priced on Avantis, so there is no book to read.
@@ -145,7 +163,8 @@ export function SealedBook({ sym, resizer, sealed = 0, secondsLeft = 0, lastCros
                 </div>
               );
             })()}
-            <div className="sealed__stat"><span>Orders sealed</span><b>{sealed}</b></div>
+            <div className="sealed__stat"><span>Sealed in {sym}</span><b>{sealed}</b></div>
+            <div className="sealed__stat"><span>Across all markets</span><b>{sealedAll}</b></div>
             {/* Whether these numbers came from the chain or a local clock. Surfaced rather
                 than hidden: a demo indistinguishable from the real thing is the one outcome
                 this product cannot afford. */}
@@ -153,13 +172,30 @@ export function SealedBook({ sym, resizer, sealed = 0, secondsLeft = 0, lastCros
               <span>Source</span>
               <b className={live ? 'is-hidden' : ''}>{live ? 'on-chain' : 'local clock'}</b>
             </div>
+            {/* The outcome, in the two words that matter. CROSSED is the product: volume that
+                never touched a public venue. UNFILLED is what is left when nobody took the
+                other side — ordinary crossing-network behaviour, not a failure, and not a
+                refund either: nothing was escrowed, so nothing comes back.
+
+                Both stay "—" until the keeper publishes the attested decrypt. Filling them in
+                from a guess would make this panel indistinguishable from a mock, which is the
+                one thing it must never be. */}
             <div className="sealed__stat">
-              <span>Last epoch crossed</span>
+              <span>Crossed internally</span>
               <b className="is-hidden">{lastCrossed == null ? '—' : `${Math.round(lastCrossed * 100)}%`}</b>
             </div>
+            <div className="sealed__stat">
+              <span>Unfilled</span>
+              <b>{lastCrossed == null ? '—' : `${Math.round((1 - lastCrossed) * 100)}%`}</b>
+            </div>
+            <div className="sealed__stat">
+              <span>Epoch {epochId != null && epochId > 1 ? `#${epochId - 1}` : 'previous'}</span>
+              <b>{!live ? '—' : prevNetted ? 'netted' : 'awaiting keeper'}</b>
+            </div>
             <p className="sealed__note">
-              At close, orders are matched against each other on ciphertext. Whatever matches
-              never reaches a public venue; only the remainder is sent to Avantis.
+              At close, orders are matched against each other on ciphertext. Whatever crosses
+              never reaches a public venue. Whatever finds no counterparty goes unfilled, unless
+              you chose to route it out to Avantis.
             </p>
           </div>
         )}

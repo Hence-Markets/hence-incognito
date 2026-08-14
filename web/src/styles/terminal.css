@@ -463,6 +463,9 @@ body.term-rsz-x .term__rsz::after, body.term-rsz-y .term__rsz::after { opacity: 
 .msel-venue--hl { color: #7cc7ff; background: rgba(90,150,255,0.15); }
 .msel-venue--xyz { color: var(--peach); background: rgba(244,195,154,0.14); }
 .msel-venue--hip3 { color: var(--dim); background: var(--hover); }
+/* The only venue in incognito. Uses --hidden (what we protect) rather than a venue-brand
+   colour, because what this badge is really telling you is which chain your order lands on. */
+.msel-venue--avantis { color: var(--hidden, #9fe0c0); background: rgba(120, 220, 170, 0.13); }
 .msel-lev { font-size: 9px; font-weight: 600; color: var(--dimmer); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 4px; }
 .msel-price { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
 .msel-price b { font-size: 13px; font-weight: 600; }
@@ -693,3 +696,26 @@ body.term-rsz-x .term__rsz::after, body.term-rsz-y .term__rsz::after { opacity: 
 .term__pta-row--short b{color:var(--amber,#fbbf24)}
 .term__whyoff{margin-top:6px;text-align:center;font-size:11px;color:var(--amber,#fbbf24);
   font-variant-numeric:tabular-nums;opacity:.9}
+
+
+/* INCOGNITO ticket: the residual disposition. Two options, so they get equal width rather than
+   the slippage row's five tight cells. */
+.term__resid { display: inline-flex; gap: 4px; }
+.term__resid button { padding: 3px 8px; white-space: nowrap; }
+.term__residnote { margin-top: 6px; font-size: 10.5px; line-height: 1.45; color: var(--dimmest); }
+.sealed__stat--all { opacity: .72; }
+
+/* The executing-address line. Set apart from the other rows because it is not a parameter of
+   the order — it is the check that the product engaged. */
+.term__cfm-shield { border-top: 1px solid var(--line-1); margin-top: 4px; padding-top: 8px; }
+.term__cfm-shield b { font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 12px; }
+.term__cfm-shield em { font-style: normal; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--hidden, #9fe0c0); margin-left: 4px; }
+
+/* Sealed-orders table. Inherits the bottom panel's density; the redacted size column is the
+   only column that is deliberately unreadable, so it gets the same treatment as the book's. */
+.term__tbl--sealed { width: 100%; border-collapse: collapse; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.term__tbl--sealed th { text-align: left; font-weight: 500; color: var(--dimmest); padding: 6px 10px; border-bottom: 1px solid var(--line-1); position: sticky; top: 0; background: var(--panel); }
+.term__tbl--sealed td { padding: 6px 10px; border-bottom: 1px solid var(--line-1); color: var(--text); }
+.term__tbl--sealed td.sealed__redact { letter-spacing: .18em; color: var(--dimmest); }
+.term__tbl--sealed a { color: var(--dim); text-decoration: none; }
+.term__tbl--sealed a:hover { color: var(--text); text-decoration: underline; }

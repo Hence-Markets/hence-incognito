@@ -7,8 +7,18 @@
  * places nothing.
  */
 import { encodeFunctionData, type WalletClient } from 'viem';
+import { pairIndex } from './markets';
 
 export type Side = 'long' | 'short';
+
+/** What happens to the part of an order that finds no counterparty.
+ *
+ *  'unfilled' is ordinary crossing-network behaviour and the honest default: no contra side,
+ *  no fill, retry next epoch. Nothing was escrowed, so nothing is returned — an order that
+ *  does not fill is simply an order that does not fill, and the UI must not imply a transfer.
+ *
+ *  'avantis' routes the remainder out to the public venue, which is the mainnet path. */
+export type Residual = 'unfilled' | 'avantis';
 
 /* The Inco Lightning entrypoint. Same address on Base and Base Sepolia per @inco/lightning's
    generated Lib.sol; the contract itself calls this to charge per encrypted input. */
@@ -20,6 +30,8 @@ export type OrderIntent = {
   /** notional in USD — encrypted before it leaves the browser */
   size: number;
   leverage: number;
+  /** what to do with the unmatched remainder; recorded on chain, honoured by the keeper */
+  residual: Residual;
 };
 
 export type OrderResult =
@@ -35,6 +47,8 @@ export const INCOGNITO_ABI = [
     inputs: [
       { name: 'encryptedSize', type: 'bytes' },
       { name: 'side', type: 'uint8' },
+      { name: 'pair', type: 'uint16' },
+      { name: 'routeResidual', type: 'bool' },
     ],
     outputs: [],
   },
@@ -58,9 +72,17 @@ const INCO_ABI = [
 ] as const;
 
 /** Is the shielded path actually available? Called before the ticket lets anyone commit. */
-export function shieldedReady(shieldedAddress?: string | null): { ready: boolean; reason?: string } {
+export function shieldedReady(
+  shieldedAddress?: string | null,
+  symbol?: string | null
+): { ready: boolean; reason?: string } {
   if (!contractAddress()) return { ready: false, reason: 'Incognito contract not deployed yet' };
   if (!shieldedAddress) return { ready: false, reason: 'No shielded address — cannot place privately' };
+  // Checked HERE, not defaulted downstream. An unknown symbol falling back to pair 0 would place
+  // a real order in ETH — succeeding loudly in the wrong market is worse than refusing.
+  if (symbol !== undefined && pairIndex(symbol) == null) {
+    return { ready: false, reason: `${symbol} is not one of the netted markets` };
+  }
   return { ready: true };
 }
 
@@ -75,11 +97,13 @@ export async function placeShieldedOrder(
   intent: OrderIntent,
   shielded: { address: string; client: WalletClient } | null
 ): Promise<OrderResult> {
-  const gate = shieldedReady(shielded?.address);
+  const gate = shieldedReady(shielded?.address, intent.symbol);
   if (!gate.ready) return { ok: false, reason: gate.reason! };
   if (!shielded) return { ok: false, reason: 'Shielded wallet unavailable' };
 
   const dapp = contractAddress() as `0x${string}`;
+  const pair = pairIndex(intent.symbol);
+  if (pair == null) return { ok: false, reason: `${intent.symbol} is not one of the netted markets` };
 
   let ciphertext: `0x${string}`;
   try {
@@ -102,7 +126,7 @@ export async function placeShieldedOrder(
     const data = encodeFunctionData({
       abi: INCOGNITO_ABI,
       functionName: 'submitOrder',
-      args: [ciphertext, intent.side === 'long' ? 0 : 1],
+      args: [ciphertext, intent.side === 'long' ? 0 : 1, pair, intent.residual === 'avantis'],
     });
     // Sent by the SHIELDED wallet. If this client is ever the user's main wallet, the whole
     // product is broken — the caller is responsible for never passing one.

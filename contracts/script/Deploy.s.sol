@@ -41,7 +41,12 @@ contract Deploy is Script {
         require(bal > 0.0005 ether, "deployer has no gas - fund it from a Base Sepolia faucet");
 
         address keeper = vm.envOr("KEEPER_ADDRESS", deployer);
-        uint64 epochSeconds = uint64(vm.envOr("EPOCH_SECONDS", uint256(300)));
+        /* 120s, not 300s.
+           Long enough that a ten-order seed cannot straddle a close — `_rollEpochIfDue()` runs
+           inside submitOrder, and a split book can leave BOTH halves under MIN_ORDERS_TO_REVEAL,
+           which nothing can undo. Short enough that an order placed during a demo actually nets
+           while people are still in the room. 60s fails the first test; 300s fails the second. */
+        uint64 epochSeconds = uint64(vm.envOr("EPOCH_SECONDS", uint256(120)));
 
         if (pk == 0) vm.startBroadcast();      // forge supplies the signer (--account)
         else vm.startBroadcast(pk);            // raw key from the environment
