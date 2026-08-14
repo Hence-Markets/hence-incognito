@@ -33,12 +33,26 @@ type Props = {
   secondsLeft?: number;
   /** share of the LAST epoch that crossed internally, 0–1 */
   lastCrossed?: number | null;
+  /** false while the countdown is a local clock rather than contract state */
+  live?: boolean;
 };
 
 const mmss = (s: number) =>
   `${String(Math.floor(Math.max(0, s) / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')}`;
 
-export function SealedBook({ sym, resizer, sealed = 0, secondsLeft = 0, lastCrossed = null }: Props) {
+/* An epoch only ROLLS when someone submits an order — `_rollEpochIfDue()` lives inside
+   submitOrder, so with no flow the open epoch sits past its close time indefinitely. That is
+   fine on-chain (an empty epoch has nothing to net) but "00:00 until netting" counting down to
+   nothing reads as a broken clock. Say what is actually true instead. */
+const clockLabel = (secondsLeft: number, live: boolean, sealed: number) => {
+  if (!live) return { big: mmss(secondsLeft), sub: 'until netting' };
+  if (secondsLeft > 0) return { big: mmss(secondsLeft), sub: 'until netting' };
+  return sealed > 0
+    ? { big: 'closed', sub: 'awaiting netting' }
+    : { big: 'open', sub: 'starts on the first order' };
+};
+
+export function SealedBook({ sym, resizer, sealed = 0, secondsLeft = 0, lastCrossed = null, live = false }: Props) {
   const [tab, setTab] = useState<'sealed' | 'epochs'>('sealed');
   const asideRef = useRef<HTMLElement>(null);
   const prevW = useRef<string>('');
@@ -122,11 +136,23 @@ export function SealedBook({ sym, resizer, sealed = 0, secondsLeft = 0, lastCros
           </>
         ) : (
           <div className="term__book-body sealed">
-            <div className="sealed__count">
-              <b>{mmss(secondsLeft)}</b>
-              <span>until netting</span>
-            </div>
+            {(() => {
+              const c = clockLabel(secondsLeft, live, sealed);
+              return (
+                <div className="sealed__count">
+                  <b>{c.big}</b>
+                  <span>{c.sub}</span>
+                </div>
+              );
+            })()}
             <div className="sealed__stat"><span>Orders sealed</span><b>{sealed}</b></div>
+            {/* Whether these numbers came from the chain or a local clock. Surfaced rather
+                than hidden: a demo indistinguishable from the real thing is the one outcome
+                this product cannot afford. */}
+            <div className="sealed__stat">
+              <span>Source</span>
+              <b className={live ? 'is-hidden' : ''}>{live ? 'on-chain' : 'local clock'}</b>
+            </div>
             <div className="sealed__stat">
               <span>Last epoch crossed</span>
               <b className="is-hidden">{lastCrossed == null ? '—' : `${Math.round(lastCrossed * 100)}%`}</b>

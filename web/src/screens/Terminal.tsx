@@ -1112,7 +1112,7 @@ function PerpBody({ sym }: { sym: string }) {
           {/* INCOGNITO: the order book is replaced, not hidden. Avantis is vault-backed and
               oracle-priced so there is no CLOB to render, and our own flow is encrypted until
               the epoch closes — the panel shows what is actually knowable. */}
-          <SealedBook sym={pair} resizer={rsz('book', 'l')} sealed={epoch.sealed} secondsLeft={epoch.secondsLeft} lastCrossed={epoch.lastCrossed} />
+          <SealedBook sym={pair} resizer={rsz('book', 'l')} sealed={epoch.sealed} secondsLeft={epoch.secondsLeft} lastCrossed={epoch.lastCrossed} live={epoch.live} />
 
           {/* order entry + account card (right column) */}
           <aside className="term__entry">
