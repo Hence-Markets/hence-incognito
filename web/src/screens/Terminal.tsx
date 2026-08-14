@@ -16,6 +16,8 @@ import { TradingChart, type Candle } from '../components/TradingChart';
 import { type LiveFeed } from '../components/OrderBook';
 import { SealedBook } from '../components/SealedBook';
 import { useEpoch } from '../hooks/useEpoch';
+import { useShielded } from '../lib/useShielded';
+import { placeShieldedOrder, shieldedReady } from '../lib/order';
 import { HlFundSheet } from '../components/HlFundSheet';
 import { openStream, type StreamStatus, type BookMsg, type TradesMsg } from '../lib/stream';
 import { MarketSelect, getWatch } from '../components/MarketSelect';
@@ -687,6 +689,7 @@ function PerpBody({ sym }: { sym: string }) {
   // non-tradeable market — the UI path already exists, it just needs the venue in the test.
   const readOnlyMarket = !market.isTradeable(pair) || !isAvantisSymbol(pair);
   const epoch = useEpoch();   // countdown + sealed count for the sealed book
+  const shielded = useShielded();   // the address orders execute from — never the user's own
   // Percentage buttons: buying power = available collateral × the SELECTED leverage. The order flow
   // applies this leverage on HL before opening, so sizing matches what actually executes. HL still
   // enforces the true limit; this is a convenience estimate.
@@ -738,6 +741,16 @@ function PerpBody({ sym }: { sym: string }) {
 
   // sign updateLeverage to set the account's real leverage + margin mode for this asset
   const doSetLeverage = async () => {
+    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
+       adjusting a shielded position from the identity wallet does not merely deanonymise that
+       action — it LINKS the identity wallet to a position that was opened shielded, undoing
+       the protection retroactively and permanently. Refuse until the shielded route covers it.
+       Removing this guard without routing through the shielded wallet re-opens that hole. */
+    if (!shielded.address) {
+      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+      return;
+    }
+
     if (readOnlyMarket) return;
     if (!signer.ready || !signer.sign) { toast('Connect a wallet to set leverage', { icon: 'wallet' }); if (auth.ready && !auth.authenticated) auth.login(); return; }
     setLevBusy(true);
@@ -757,6 +770,16 @@ function PerpBody({ sym }: { sym: string }) {
   const [closePct, setClosePct] = useState(100);                    // partial close (trade.xyz % chips)
   const [skipCloseCfm, setSkipCloseCfm] = useState<boolean>(() => { try { return localStorage.getItem('hence.term.skipCloseConfirm') === '1'; } catch { return false; } });
   const doClose = async (p: any, pct = 100) => {
+    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
+       adjusting a shielded position from the identity wallet does not merely deanonymise that
+       action — it LINKS the identity wallet to a position that was opened shielded, undoing
+       the protection retroactively and permanently. Refuse until the shielded route covers it.
+       Removing this guard without routing through the shielded wallet re-opens that hole. */
+    if (!shielded.address) {
+      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+      return;
+    }
+
     if (!signer.ready || !signer.sign) { toast('Connect a wallet to close', { icon: 'wallet' }); return; }
     const mk = p.sz > 0 && p.positionValue > 0 ? p.positionValue / p.sz : p.entryPx;
     if (!(mk > 0)) { toast('No live price to close against', { icon: 'close' }); return; }
@@ -795,6 +818,16 @@ function PerpBody({ sym }: { sym: string }) {
   const [slIn, setSlIn] = useState('');
   const [tpslBusy, setTpslBusy] = useState(false);
   const doTpsl = async () => {
+    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
+       adjusting a shielded position from the identity wallet does not merely deanonymise that
+       action — it LINKS the identity wallet to a position that was opened shielded, undoing
+       the protection retroactively and permanently. Refuse until the shielded route covers it.
+       Removing this guard without routing through the shielded wallet re-opens that hole. */
+    if (!shielded.address) {
+      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+      return;
+    }
+
     const p = tpslFor;
     if (!p || !signer.ready || !signer.sign) { toast('Connect a wallet first', { icon: 'wallet' }); return; }
     const mk = p.sz > 0 && p.positionValue > 0 ? p.positionValue / p.sz : p.entryPx;
@@ -821,6 +854,16 @@ function PerpBody({ sym }: { sym: string }) {
 
   // cancel a resting Hyperliquid order (native perps only)
   const doCancel = async (o: any) => {
+    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
+       adjusting a shielded position from the identity wallet does not merely deanonymise that
+       action — it LINKS the identity wallet to a position that was opened shielded, undoing
+       the protection retroactively and permanently. Refuse until the shielded route covers it.
+       Removing this guard without routing through the shielded wallet re-opens that hole. */
+    if (!shielded.address) {
+      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+      return;
+    }
+
     if (!signer.ready || !signer.sign) { toast('Connect a wallet to cancel', { icon: 'wallet' }); return; }
     setCancelling(o.oid);
     try {
@@ -881,6 +924,53 @@ function PerpBody({ sym }: { sym: string }) {
   // Actually sign + submit the order (optionally with the builder code attached).
   // Never blocks on monetization — the builder is an optional add-on to params.
   const submitOrder = async (builder: BuilderCode | null) => {
+    if (!confirm) { setConfirm(null); return; }
+
+    /* ── INCOGNITO: the order goes to Inco, not to Hyperliquid ────────────────────────────
+       The size is encrypted in this browser and submitted from the SHIELDED wallet. The
+       Hyperliquid implementation below is kept (renamed) only because the confirm sheet,
+       leverage UI and toasts around it are shared — it is no longer reachable.
+
+       FAIL CLOSED. With no contract or no shielded address this refuses and says why. It
+       must NEVER fall through to the Hyperliquid branch: that signs with the user's OWN
+       wallet, publishing the exact link this product exists to hide, at the moment they
+       believe they are protected. */
+    const gate = shieldedReady(shielded.address);
+    if (!gate.ready) {
+      toast(gate.reason ?? 'Incognito is not ready', { icon: 'close' });
+      setConfirm(null);
+      return;
+    }
+    setPlacing(true);
+    try {
+      // PlaceOrderParams carries the notional directly as `usd` — no need to reconstruct it
+      // from size × price, which is where the first attempt went wrong.
+      const usd = Number(confirm.params.usd) || 0;
+      const res = await placeShieldedOrder(
+        {
+          symbol: String(confirm.params.coin).split(':').pop() || pair,
+          side: confirm.params.isBuy ? 'long' : 'short',
+          size: usd,
+          leverage: confirm.lev,
+        },
+        // TODO(next): a viem WalletClient over the shielded Privy wallet. Until it exists this
+        // returns "Shielded wallet unavailable" and places nothing — the correct behaviour,
+        // not a stub.
+        null,
+      );
+      if (!res.ok) toast(res.reason, { icon: 'close' });
+      else toast(`Order sealed into epoch ${epoch.epochId ?? '—'}`, { icon: 'check' });
+    } catch (e: any) {
+      toast(e?.message ?? 'Could not seal the order', { icon: 'close' });
+    } finally {
+      setPlacing(false);
+      setConfirm(null);
+    }
+  };
+
+  /** Hyperliquid submit — UNREACHABLE in Incognito. Retained so the shared confirm/leverage
+   *  UI still compiles against it, and as the reference for what the Inco path replaced. */
+  const submitOrderHyperliquid = async (builder: BuilderCode | null) => {
     if (!confirm || !signer.sign || confirm.address !== signer.address) { setConfirm(null); return; }
     setPlacing(true);
     try {
