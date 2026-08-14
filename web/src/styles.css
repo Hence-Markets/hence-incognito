@@ -32,6 +32,22 @@
   --radius-sm: 9px;
   --font:      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
+  /* Carried over from Hence so the ported terminal.css resolves cleanly. */
+  --up-bg:     rgba(74,201,134,0.13);
+  --down-bg:   rgba(240,110,102,0.13);
+  --gold:      #e6c84f;
+  --blue:      #5b6cf0;
+  --acct:      #f4c39a;
+  --ease:      cubic-bezier(.4,0,.2,1);
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* --green/--red/--amber are referenced by terminal.css but declared NOWHERE in Hence, so
+     those rules have always rendered their inline fallbacks. Declaring them here costs
+     nothing and brings ~30 more rules under token control for the incognito tint. */
+  --green:     var(--up);
+  --red:       var(--down);
+  --amber:     var(--public);
+
   /* The only additions. Incognito's own two colours: what we protect, and what we cannot.
      Everything else is Hence's, so the tint reads as a mode rather than a rebrand. */
   --hidden:    #8ab4f8;

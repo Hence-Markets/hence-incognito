@@ -20,7 +20,7 @@ import {
 
 const usd = (n: number) => '$' + Math.round(n).toLocaleString();
 
-export function Epochs() {
+export function Epochs({ onBack }: { onBack?: () => void }) {
   const [ep, setEp] = useState<Epoch>(() => simulatedEpoch());
   const thin = ep.orderCount < 5;
 
@@ -38,6 +38,7 @@ export function Epochs() {
           </p>
         </div>
         <div className="ep__switch">
+          {onBack ? <button onClick={onBack}>← Terminal</button> : null}
           <button className={!thin ? 'on' : ''} onClick={() => setEp(simulatedEpoch())}>
             Full book
           </button>

@@ -17,8 +17,15 @@ export function useAuth() {
   const { ready, authenticated, user, login, logout, getAccessToken } = usePrivy();
   const { wallets } = useWallets();
 
-  const wallet =
-    wallets.find((w: any) => (w.walletClientType || '').startsWith('privy')) || wallets[0];
+  /* IDENTITY vs SHIELDING — the preference is INVERTED from the main app, on purpose.
+     Hence picks the Privy embedded wallet first, which is right there. Here it is wrong twice:
+       1. the access cohort is a list of real, externally-held addresses, so an embedded wallet
+          would never match and the gate would deny the whole team;
+       2. the embedded wallet is what a SHIELDED address gets built on, and the shielded address
+          must never be the identity we check or display — that is the link we exist to break.
+     So: a connected external wallet is the identity; the embedded one is left for shielding. */
+  const external = wallets.find((w: any) => !(w.walletClientType || '').startsWith('privy'));
+  const wallet = external || wallets[0];
   const walletAddress: string | undefined = wallet?.address || (user as any)?.wallet?.address;
 
   const address: string | undefined =
@@ -28,5 +35,9 @@ export function useAuth() {
 
   const shortAddr = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : undefined;
 
-  return { ready, authenticated, login, logout, getAccessToken, wallet, address, shortAddr };
+  /** True when identity comes from a wallet the user actually holds, rather than one Privy
+   *  minted for them. The cohort gate can only ever match this case. */
+  const isExternal = !!external;
+
+  return { ready, authenticated, login, logout, getAccessToken, wallet, address, shortAddr, isExternal };
 }

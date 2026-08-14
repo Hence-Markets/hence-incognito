@@ -16,9 +16,16 @@ createRoot(document.getElementById('root')!).render(
       <PrivyProvider
         appId={APP_ID}
         config={{
-          loginMethods: ['email'],
-          appearance: { theme: 'dark' },
-          // A dedicated embedded wallet per user is what a shielded address is built on.
+          // 'wallet' leads deliberately. The access cohort is a list of REAL wallet addresses,
+          // so an email-only login would mint a fresh embedded wallet whose address is not on
+          // that list — the gate would then deny everyone, including the team.
+          loginMethods: ['wallet', 'email'],
+          appearance: {
+            theme: 'dark',
+            walletList: ['metamask', 'rainbow', 'coinbase_wallet', 'zerion', 'okx_wallet', 'phantom'],
+          },
+          // Still created for email users — and it is also what a shielded address will be
+          // built on, which is why the embedded wallet is never the identity address below.
           embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' } },
         }}
       >

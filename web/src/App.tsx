@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { Landing } from './screens/Landing';
 import { Epochs } from './screens/Epochs';
+import { Terminal } from './screens/Terminal';
 import { checkAccess } from './lib/access';
 import { useAuth } from './lib/useAuth';
 
@@ -63,7 +64,7 @@ function Authed({
     };
   }, [ready, authenticated, address, setStatus]);
 
-  if (devNoGate()) return <Epochs />;
+  if (devNoGate()) return <Surface shieldedAddress={null} />;
 
   if (!entered) {
     return (
@@ -76,10 +77,20 @@ function Authed({
     );
   }
 
-  // TODO(next): the ticket, ported from Hence's TradeTicket rather than invented — Incognito
-  // has to read as the same product in a different mode. Its review step carries the
-  // executing-address line, which is the seatbelt: it confirms the shielding actually engaged.
-  // If the shielded wallet is unavailable the order MUST fail loudly rather than fall back to
-  // the main wallet — failing open would publish exactly the link this product exists to hide.
-  return <Epochs />;
+  // TODO(next): the SHIELDED address. Until the keeper mints one, the ticket refuses to place
+  // rather than falling back to the user's main wallet — which is the correct behaviour
+  // permanently, not a stub. Falling open would publish exactly the link this exists to hide.
+  return <Surface shieldedAddress={null} />;
+}
+
+
+/* Terminal is the working surface; the epoch visualiser is one click away rather than the
+   landing spot — it explains what happened, which only matters once you have traded. */
+function Surface({ shieldedAddress }: { shieldedAddress?: string | null }) {
+  const [view, setView] = useState<'terminal' | 'epochs'>('terminal');
+  return view === 'terminal' ? (
+    <Terminal shieldedAddress={shieldedAddress} onOpenEpochs={() => setView('epochs')} />
+  ) : (
+    <Epochs onBack={() => setView('terminal')} />
+  );
 }
