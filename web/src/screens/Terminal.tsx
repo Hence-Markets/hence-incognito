@@ -232,13 +232,11 @@ function PerpBody({ sym }: { sym: string }) {
   // trade.xyz-style "Don't show again": skip the confirm modal and place directly
   // (first-time approvals still run — toasts + the wallet popup carry the feedback)
   const [skipCfm, setSkipCfm] = useState<boolean>(() => { try { return localStorage.getItem('hence.term.skipConfirm') === '1'; } catch { return false; } });
-  const [enableSheet, setEnableSheet] = useState(false);   // "Enable 1-click trading" consent open
   /* What happens to the part of this order that finds no counterparty. Defaults to leaving it
      unfilled, which is both the honest state on a testnet and ordinary crossing-network
      behaviour — the alternative sends it to a public venue, which is the thing users came here
      to avoid, so it must be chosen rather than assumed. */
   const [resid, setResid] = useState<Residual>('unfilled');
-  const [enabling, setEnabling] = useState(false);
   // An order preview belongs to the wallet that created it. Clear pending
   // confirmations if Privy changes or removes that wallet.
   const signerAddressRef = useRef(signer.address);
@@ -726,23 +724,6 @@ function PerpBody({ sym }: { sym: string }) {
   const isoOnly = !!mktLimits?.onlyIsolated;
   const effCross = isoOnly ? false : isCross;
   const levDirty = lev !== appliedLev || effCross !== appliedCross;
-
-  // Explicit one-time "Enable 1-click trading" — approve the agent key up front (mirrors HL's
-  // "Establish Connection"), so the security delegation is its own clear step, not a surprise
-  // popup mid-order. After this, orders/cancels/leverage sign silently.
-  const doEnableAgent = async () => {
-    if (!signer.ready || !signer.sign) { toast('Connect a wallet first', { icon: 'wallet' }); return; }
-    setEnabling(true);
-    try {
-      await agent.ensureAgentSigner();
-      toast('1-click trading enabled — orders now sign instantly.', { icon: 'check' });
-      setEnableSheet(false);
-    } catch (e: any) {
-      toast(e?.shortMessage || e?.message || 'Approval cancelled', { icon: 'close' });
-    } finally {
-      setEnabling(false);
-    }
-  };
 
   // sign updateLeverage to set the account's real leverage + margin mode for this asset
   const doSetLeverage = async () => {
@@ -1282,7 +1263,10 @@ function PerpBody({ sym }: { sym: string }) {
                       <input className="term__levpop-num" type="text" inputMode="numeric" value={lev}
                         onChange={(e) => { const v = parseInt(e.target.value.replace(/[^0-9]/g, ''), 10); setLev(Number.isFinite(v) ? Math.min(Math.max(1, v), maxLev) : 1); }} aria-label="Leverage value" />
                     </div>
-                    <div className="term__levpop-row"><span>Buying power</span><b>{hl.connected && hl.loaded ? fmtUsd(hl.available * lev) : '—'}</b></div>
+                    {/* "Buying power" was HL collateral × leverage. A sealed order posts no
+                        collateral, so there is none — and leverage only applies to a residual
+                        that gets routed out. */}
+                    <div className="term__levpop-row"><span>Applies to</span><b>routed residual only</b></div>
                     {levDirty && <div className="term__lev-sub">Applies to the residual if you route it out; sealed orders net at notional.</div>}
                     <button className="term__levpop-cta" disabled={levBusy}
                       onClick={async () => { if (hl.connected && levDirty && signer.ready) { await doSetLeverage(); } setLevSheet(false); }}>
@@ -1380,24 +1364,38 @@ function PerpBody({ sym }: { sym: string }) {
 
             {/* submit CTA — pinned below the scrolling form so it's always visible (trade.xyz anatomy) */}
             {(() => {
-              // Before the agent is approved, the trade button becomes "Enable 1-click trading"
-              // (like HL's "Enable Trading") — one clear consent step, then normal order flow.
-              const needsAgent = signer.ready && hl.loaded && !readOnlyMarket && !agent.hasAgent;
-              const label = readOnlyMarket ? 'Read-only · trading unavailable'
-                : !signer.ready ? 'Connect wallet to trade'
-                : !hl.loaded ? (hl.unavailable ? 'Account data unavailable' : 'Verifying account…')
-                : needsAgent ? 'Enable 1-click trading'
-                : `${side} ${pair}`;
-              // margin gates the ORDER, not the agent-consent step
-              const blocked = !needsAgent && !readOnlyMarket && signer.ready && marginShort;
+              /* INCOGNITO: four Hyperliquid dependencies lived in this one button, and the
+                 first of them swallowed the click entirely.
+
+                 `needsAgent` turned the trade button into "Enable 1-click trading" — HL's
+                 agent-key consent — so pressing it opened that sheet instead of sealing an
+                 order, and Hyperliquid answered "Too many extra agents for cumulative volume
+                 traded". An incognito order is signed by the shielded embedded wallet; there
+                 is no agent key in this flow and never was.
+
+                 The rest gated on the HL clearinghouse: "Verifying account…" until hl.loaded,
+                 disabled on the same, and a margin check against HL collateral that a sealed
+                 order never posts. Every one of them blocked a healthy order on the state of
+                 a venue this app does not use.
+
+                 What actually gates a sealed order: a market we net, a signed-in user, and a
+                 shielded wallet to execute from. */
+              const label = readOnlyMarket ? `${pair} is not a netted market`
+                : !auth.authenticated ? 'Sign in to trade'
+                : shielded.creating ? 'Creating shielded account…'
+                : !shielded.address ? 'Create shielded account'
+                : `Seal ${side} ${pair}`;
+              const needsShielded = auth.authenticated && !shielded.address;
               return (
                 <>
                   <button
-                    className={'term__submit term__submit--' + (needsAgent ? 'long' : side.toLowerCase())}
-                    onClick={needsAgent ? () => setEnableSheet(true) : submit}
-                    disabled={placing || readOnlyMarket || (signer.ready && !hl.loaded) || !!blocked}
+                    className={'term__submit term__submit--' + (needsShielded ? 'long' : side.toLowerCase())}
+                    onClick={needsShielded ? () => void shielded.create() : submit}
+                    disabled={placing || shielded.creating || readOnlyMarket}
                   >{label}</button>
-                  {blocked && <div className="term__whyoff">Needs {fmtUsd(blocked.needed)} margin · {fmtUsd(blocked.available)} available</div>}
+                  {shielded.reason && shielded.address && (
+                    <div className="term__whyoff">{shielded.reason}</div>
+                  )}
                 </>
               );
             })()}
@@ -1479,7 +1477,7 @@ function PerpBody({ sym }: { sym: string }) {
                 <button className="term__cfm-cancel" disabled={placing} onClick={() => setConfirm(null)}>Cancel</button>
                 <button className={'term__cfm-go term__cfm-go--' + (isLong ? 'long' : 'short')} disabled={placing || approving} onClick={doPlace}>
                   {approving ? <><span className="term__cop-spin" /> Approve fee cap in wallet…</>
-                    : placing ? <><span className="term__cop-spin" /> {agent.approving ? 'Approve in wallet…' : 'Placing…'}</>
+                    : placing ? <><span className="term__cop-spin" /> 'Sealing…'</>
                       : <>Confirm {isLong ? 'Long' : 'Short'} <Icon name="arrowRight" size={13} /></>}
                 </button>
               </div>
@@ -1488,31 +1486,63 @@ function PerpBody({ sym }: { sym: string }) {
         );
       })()}
 
-      {/* "Enable 1-click trading" — the one-time agent approval, surfaced up front (HL's
-          "Establish Connection"). Gas-free signature; the key trades but can't withdraw funds. */}
-      {enableSheet && (
-        <div className="term__cfm" onClick={(e) => { if (e.target === e.currentTarget && !enabling) setEnableSheet(false); }}>
-          <div className="term__cfm-card">
-            <div className="term__cfm-h">
-              <span className="term__cfm-side term__cfm-side--long">Hence</span>
-              <b>Enable 1-click trading</b>
-              <span className="term__cfm-type">one-time</span>
-              <button className="term__cfm-x" disabled={enabling} onClick={() => setEnableSheet(false)}><Icon name="close" size={16} /></button>
-            </div>
-            <p className="term__cfm-blurb">
-              Approve a trading key once and orders, cancels and leverage changes sign instantly —
-              no wallet popup each time. The signature is <b>gas-free</b>.
-            </p>
-            <div className="term__cfm-note"><Icon name="alert" size={12} /> The key can place and close trades on your account but <b>cannot withdraw or move your funds</b> — that always needs your wallet. Revoke it anytime on Hyperliquid.</div>
-            <div className="term__cfm-actions">
-              <button className="term__cfm-cancel" disabled={enabling} onClick={() => setEnableSheet(false)}>Not now</button>
-              <button className="term__cfm-go term__cfm-go--long" disabled={enabling} onClick={doEnableAgent}>
-                {enabling ? <><span className="term__cop-spin" /> Approve in wallet…</> : <>Enable trading <Icon name="arrowRight" size={13} /></>}
-              </button>
+      {/* The "Enable 1-click trading" sheet was removed here, not left orphaned. It approved a
+          HYPERLIQUID agent key — irrelevant to a flow whose orders are signed by the shielded
+          embedded wallet, and it was what the trade button opened instead of placing an order. */}
+
+      {confirm && !skipCfm && (() => {
+        const c = confirm; const isLong = c.params.isBuy; const coin = c.params.coin;
+        return (
+          <div className="term__cfm" onClick={(e) => { if (e.target === e.currentTarget && !placing) setConfirm(null); }}>
+            <div className="term__cfm-card">
+              <div className="term__cfm-h">
+                <span className={'term__cfm-side term__cfm-side--' + (isLong ? 'long' : 'short')}>{isLong ? 'Long' : 'Short'}</span>
+                <b>{coin}-PERP</b>
+                <span className="term__cfm-type">{c.params.type}{c.params.reduceOnly ? ' · Reduce' : ''}</span>
+                <button className="term__cfm-x" disabled={placing} onClick={() => setConfirm(null)}><Icon name="close" size={16} /></button>
+              </div>
+              <div className="term__cfm-rows">
+                <div><span>Order value</span><b>{fmtUsd(c.params.usd)}</b></div>
+                <div><span>Reference price</span><b>{fmtPx(c.price)}</b></div>
+                <div><span>Seals into</span><b>Epoch {epoch.epochId ?? '—'}</b></div>
+                <div><span>If unmatched</span><b>{resid === 'unfilled' ? 'Return unfilled' : 'Route to Avantis'}</b></div>
+                {/* THE SEATBELT. The spec calls for an executing-address line here and this is
+                    why: it is the last screen before signing, and it is the only moment a user
+                    can confirm that shielding actually engaged rather than silently failed
+                    open. If this ever showed the connected wallet, the trade would be
+                    permanently attributable and no later fix removes it from the chain. */}
+                <div className="term__cfm-shield">
+                  <span>Executing as</span>
+                  <b>{shielded.address ? `${shielded.address.slice(0, 6)}…${shielded.address.slice(-4)}` : '—'} <em>shielded</em></b>
+                </div>
+              </div>
+              {/* quiet fine print, trade.xyz-style — plain facts, no warning chrome; the fee
+                  also lives as a sidenote in the entry column so this stays one dim line */}
+              {/* The slippage and fee lines that were here described a Hyperliquid fill: a taker
+                  fee, a builder fee, a price band. None of them apply — nothing fills at a
+                  price right now, and the only cost is Inco's input fee plus gas. */}
+              <div className="term__cfm-fine">
+                Your size is encrypted in this browser and stays sealed until the epoch closes.
+                Base {import.meta.env.VITE_NETWORK === 'mainnet' ? 'mainnet' : 'Sepolia'} · costs the Inco input fee plus gas.
+              </div>
+              <div className="term__cfm-actions">
+                <label className="term__cfm-skip"><input type="checkbox" checked={skipCfm} onChange={(e) => { setSkipCfm(e.target.checked); try { localStorage.setItem('hence.term.skipConfirm', e.target.checked ? '1' : ''); } catch { /* storage off */ } }} /> Don't show again</label>
+                <button className="term__cfm-cancel" disabled={placing} onClick={() => setConfirm(null)}>Cancel</button>
+                <button className={'term__cfm-go term__cfm-go--' + (isLong ? 'long' : 'short')} disabled={placing || approving} onClick={doPlace}>
+                  {approving ? <><span className="term__cop-spin" /> Approve fee cap in wallet…</>
+                    : placing ? <><span className="term__cop-spin" /> 'Sealing…'</>
+                      : <>Confirm {isLong ? 'Long' : 'Short'} <Icon name="arrowRight" size={13} /></>}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
+
+{/* The "Enable 1-click trading" sheet was removed here, not left orphaned. It approved a
+          HYPERLIQUID agent key — meaningless in a flow whose orders are signed by the shielded
+          embedded wallet, and it was what the trade button opened INSTEAD of placing an order.
+          Hyperliquid's own "Too many extra agents" error was the only sign anything was wrong. */}
 
       {/* close-position confirm — receipt style, with trade.xyz's partial-close % chips */}
 
