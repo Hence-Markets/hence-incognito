@@ -14,6 +14,8 @@
  * Hence names it on the xyz dex.
  */
 import { fetchPairs } from './avantis';
+// @ts-ignore — JS module
+import { ingestAvantis } from './market.js';
 
 let allow: Set<string> | null = null;
 let inflight: Promise<Set<string>> | null = null;
@@ -33,6 +35,15 @@ export function loadAvantisUniverse(): Promise<Set<string>> {
         set.add(String(p.from).toUpperCase());
       }
       allow = set;
+      // Push them INTO the universe, don't just filter it afterwards. Filtering left the
+      // terminal at the mercy of Hence's xyz dex: when that failed to load, Avantis-listed
+      // equities disappeared from a venue that lists them.
+      try {
+        const r = ingestAvantis(pairs);
+        console.info(`[incognito] Avantis universe: ${r.added} added, ${r.tagged} already present, ${r.total} total`);
+      } catch (e) {
+        console.warn('[incognito] could not ingest Avantis pairs', e);
+      }
       try {
         window.dispatchEvent(new CustomEvent('incognito:universe', { detail: set.size }));
       } catch { /* non-browser */ }

@@ -71,10 +71,14 @@ function Gate() {
 }
 
 (async () => {
-  // Load the Avantis allowlist alongside the market universe. Raced, not awaited hard: a slow
-  // venue must not hold the first paint, and everything downstream no-ops until it resolves.
-  loadAvantisUniverse();
+  // Render on the RACE so a slow venue never holds the first paint...
   await Promise.race([market.init(), timeout(3500)]);
+  // ...but ingest Avantis off init()'s REAL completion. Chaining off the race was wrong and
+  // silently so: when init overran 3.5s the universe was still empty, Avantis' 97 rows went
+  // in, and init then hit its own `universe = []` reset and wiped every one of them. The log
+  // said "97 added" while the terminal showed none. init() is idempotent, so calling it again
+  // just returns the in-flight promise.
+  market.init().then(() => loadAvantisUniverse()).catch(() => loadAvantisUniverse());
   root.render(
     <AuthProvider>
       <Gate />

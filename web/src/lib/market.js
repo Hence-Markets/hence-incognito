@@ -129,10 +129,11 @@ export const getUniverse = () => universe;
 // needed. Other HIP-3 dexes may use a different collateral token → read-only until verified.
 // Returns false before the universe is ingested (safe default) and for non-HL assets.
 export const isTradeable = (sym) => {
-  const coin = coinBySym.get(String(sym).toUpperCase());
-  if (!coin) return false;
-  const a = universe.find((x) => x.coin === coin);
-  return !!a && (a.dex === '' || a.dex === XYZ);
+  // INCOGNITO: every order routes to Avantis, so "tradeable" means "Avantis lists it" —
+  // NOT the HL/xyz test this returned upstream. A symbol Hyperliquid carries but Avantis
+  // does not is read-only here, and vice versa.
+  const a = universe.find((x) => x.sym === String(sym).toUpperCase());
+  return !!a && !!a.avantis;
 };
 
 /* ---- RESEARCH MODE: symbols outside the venue universe, resolved live via FMP ----
@@ -276,6 +277,40 @@ function writeTicker(a, price) {
 /* test seam: the venue-claim race (native meta late → reclaim) is a tradability bug we
    shipped once; the node test drives the REAL ingest so the splice/rewrite path stays honest */
 export const _ingestMetaForTest = (m, dex) => ingestMeta(m, dex);
+
+/* INCOGNITO: the universe is AVANTIS', not Hyperliquid's.
+ *
+ * Every order here routes to Avantis, so the venue defines what exists. Intersecting with
+ * Hence's universe (the first attempt) inherited its perpDexs flake for no benefit: when the
+ * xyz dex failed to load, every Avantis-listed equity silently vanished from a terminal that
+ * can trade them perfectly well.
+ *
+ * Symbols Hence ALSO carries keep their existing row, because that row is what supplies the
+ * live price, the chart and the order book. Avantis-only symbols are added with no coin
+ * mapping — they are selectable and show no price until the Pyth feed is wired, which is
+ * honest and visible rather than a silent omission.
+ */
+const AV_WORLD = { 0: 'crypto', 1: 'crypto', 4: 'crypto', 5: 'crypto', 2: 'stocks', 3: 'stocks', 6: 'stocks' };
+const AV_CAT = { 0: 'Majors', 1: 'Alts', 2: 'FX', 3: 'Commodities', 4: 'Memes', 5: 'DeFi', 6: 'Equities' };
+
+export function ingestAvantis(pairs) {
+  let added = 0, tagged = 0;
+  for (const p of pairs || []) {
+    const sym = String(p.from || '').toUpperCase();
+    if (!sym || sym === 'USD') continue;              // the quote leg is not an asset
+    if (sym.includes('UPSIDE')) continue;             // Avantis' own product, not the underlying
+    const existing = universe.find((x) => x.sym === sym);
+    if (existing) { existing.avantis = true; tagged++; continue; }
+    universe.push({
+      coin: sym, sym, name: NAMES[sym] || sym, dex: 'avantis',
+      world: AV_WORLD[p.groupIndex] || 'crypto', cat: AV_CAT[p.groupIndex] || 'Alts',
+      maxLev: 0, avantis: true,
+    });
+    added++;
+  }
+  try { window.dispatchEvent(new CustomEvent('market:ready')); } catch { /* non-browser */ }
+  return { added, tagged, total: universe.length };
+}
 
 function ingestMeta(m, dex) {
   if (!m || !Array.isArray(m.universe)) return;
