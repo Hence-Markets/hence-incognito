@@ -4,10 +4,13 @@
    which is better placement: people read a landing page and dismiss a modal. It is also the
    compliance surface doing the most work, so it is a build requirement, not decoration.
 
-   Everything it claims comes from lib/disclosure.ts, and that file is PHASE-AWARE — the
-   columns describe whichever phase is actually running. In Phase 2 they stop being
-   hidden/public and become "if your order matches" / "if it does not", because that is the
-   real mechanic and a trader cannot control which side they land on. */
+   Everything it claims comes from lib/disclosure.ts, and that file is PHASE-AWARE — the steps
+   describe whichever phase is actually running.
+
+   IT USED TO BE TWO COLUMNS of four bullets each. Eight claims to explain one idea, and the
+   effect was the opposite of the intent: a wall of hedges reads as evasion, not candour. The
+   mechanic is three beats — encrypt, match, send the remainder — so it is three lines now, and
+   the caveats live in the demo notice below where a reader expects to find them. */
 import { DISCLOSURE, PHASE } from '../lib/disclosure';
 import { Glyph } from '../components/Glyph';
 
@@ -35,31 +38,23 @@ export function Landing({
         <Glyph size={40} />
         <h1>Hence Incognito</h1>
         <p className="landing__sub">{d.tagline}</p>
+        <p className="landing__by">{d.poweredBy}</p>
       </header>
 
-      {/* Two columns, equal weight. Making the weaker column quieter than the stronger one
-          would be the exact dishonesty this screen exists to prevent — and in Phase 2 the
-          right-hand column is not a caveat, it is half of what actually happens. */}
-      <section className="disclose" aria-label="What Incognito does and does not hide">
-        <div className="disclose__col">
-          <h2 className="disclose__h disclose__h--hidden">{d.left.heading}</h2>
-          <ul>
-            {d.left.items.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-        </div>
-        <div className="disclose__col">
-          <h2 className="disclose__h disclose__h--public">{d.right.heading}</h2>
-          <ul>
-            {d.right.items.map((x) => (
-              <li key={x}>{x}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <p className="landing__limits">{d.limits}</p>
+      {/* Three beats, in order, one line each. Numbered because it is a SEQUENCE — the
+          previous two-column layout implied a fork the trader chooses between, and they do
+          not choose: every order goes through all three. */}
+      <ol className="howto" aria-label="How an incognito order works">
+        {d.steps.map((st) => (
+          <li key={st.n} className="howto__step">
+            <span className="howto__n">{st.n}</span>
+            <div>
+              <b>{st.title}</b>
+              <span>{st.body}</span>
+            </div>
+          </li>
+        ))}
+      </ol>
 
       {/* THE DEMO NOTICE, above the button rather than in the footer.
           It is the single most important sentence on this page and the one a person is most
