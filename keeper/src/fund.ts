@@ -22,13 +22,18 @@ import { base, baseSepolia } from 'viem/chains';
 
 const CHAIN = process.env.NETWORK === 'mainnet' ? base : baseSepolia;
 
-/** One order costs the Inco fee (1e12 wei) plus gas. This is deliberately small — enough for
- *  a handful of orders, not a balance worth stealing. Top-ups are cheap; a fat hot wallet is not. */
-const GRANT = parseEther(process.env.FUND_GRANT_ETH || '0.002');
+/* One order costs about 0.0000036 ETH — the Inco fee (1e12 wei) plus ~370k gas at Base's
+   fractional gwei. 0.002 was therefore ~550 orders per wallet, which mattered nothing while
+   this was four people and matters a lot now the gate can be open: the same budget served ten
+   visitors. 0.0002 is still ~55 orders each and stretches that budget to a hundred.
+
+   Small grants are also the cheaper failure. A wallet that runs dry asks for a top-up; an
+   over-funded throwaway is a balance worth draining. */
+const GRANT = parseEther(process.env.FUND_GRANT_ETH || '0.0002');
 
 /** Do not top up a wallet that already has enough. Without this, repeated calls drain the
  *  omnibus one grant at a time and nothing in the flow looks wrong. */
-const TOP_UP_BELOW = parseEther(process.env.FUND_TOPUP_BELOW_ETH || '0.0005');
+const TOP_UP_BELOW = parseEther(process.env.FUND_TOPUP_BELOW_ETH || '0.00005');
 
 /** Hard ceiling on everything this process will ever pay out, across all wallets. The omnibus
  *  should hold only the campaign budget, but a cap means a bug cannot spend even that. */

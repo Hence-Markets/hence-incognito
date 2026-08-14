@@ -32,8 +32,9 @@ const CONTRACT = (import.meta.env.VITE_INCOGNITO_CONTRACT ?? '').trim() as Addre
 const SCAN = IS_MAINNET ? 'https://basescan.org' : 'https://sepolia.basescan.org';
 
 /** Below this an order cannot pay the Inco input fee plus gas, and would revert at the fee
- *  check. Same threshold useShielded funds against — keep them in step. */
-const MIN_GAS = 300_000_000_000_000n;   // 0.0003 ETH
+ *  check. Kept in step with useShielded's MIN_BALANCE and the funder's TOP_UP_BELOW — a
+ *  threshold above the grant would mark every freshly funded wallet as still needing gas. */
+const MIN_GAS = 50_000_000_000_000n;   // 0.00005 ETH — ~14 orders
 
 const ORDER_SUBMITTED = {
   type: 'event',

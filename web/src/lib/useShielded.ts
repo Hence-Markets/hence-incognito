@@ -47,7 +47,11 @@ export type Shielded = {
 
 /** Enough for the Inco input fee (1e12 wei) plus gas, several times over. Below this an order
  *  would revert at the fee check, which reads as "the app is broken" rather than "top me up". */
-const MIN_BALANCE = 300_000_000_000_000n;   // 0.0003 ETH
+/* MUST stay BELOW the funder's grant (FUND_GRANT_ETH, now 0.0002). A threshold above the
+   grant means a freshly funded wallet still reads as unfunded — it would ask for another
+   grant on every order, and the card would say "Needs gas" over a wallet holding plenty.
+   Matches the funder's own TOP_UP_BELOW so both sides agree on what "funded" means. */
+const MIN_BALANCE = 50_000_000_000_000n;   // 0.00005 ETH — ~14 orders
 
 /** MUST match keeper/src/verify.ts fundMessage() byte for byte, or recovery yields a different
  *  address and every request is refused for a reason that looks like ineligibility. */
