@@ -65,6 +65,12 @@ const M_TABS = ['Markets', 'Trade', 'Account'] as const;
    History, Order History and Bots were each a read of the user's Hyperliquid clearinghouse —
    permanently empty here at best, and at worst another venue's data sitting under a bar
    labelled "Sealed orders". The only history this app creates is the orders it sealed. */
+/* Is there a way to CLOSE a shielded position without signing as the identity wallet? Not yet.
+   Typed as `boolean` rather than left as a literal so TypeScript does not narrow the guarded
+   bodies to unreachable — they still need to typecheck, because they are what gets wired up
+   when the shielded exit route lands. Flip this only alongside that route. */
+const SHIELDED_EXIT_ROUTE: boolean = false;
+
 const B_TABS = ['Sealed orders'];
 
 function accountsList() {
@@ -228,7 +234,9 @@ function PerpBody({ sym }: { sym: string }) {
   // No separate consent sheet: the first order's Confirm also signs HL's required
   // one-time max-fee cap (see doPlace) — one modal, fee disclosed inline.
   const [cfg, setCfg] = useState<HenceConfig | null>(null);
-  const [approving, setApproving] = useState(false);   // the one-time fee-cap signature in flight
+  /* `approving` tracked the Hyperliquid fee-cap signature. A sealed order approves nothing —
+     kept only because the auto-fire guard below reads it, and always false. */
+  const approving = false;
   // trade.xyz-style "Don't show again": skip the confirm modal and place directly
   // (first-time approvals still run — toasts + the wallet popup carry the feedback)
   const [skipCfm, setSkipCfm] = useState<boolean>(() => { try { return localStorage.getItem('hence.term.skipConfirm') === '1'; } catch { return false; } });
@@ -727,13 +735,21 @@ function PerpBody({ sym }: { sym: string }) {
 
   // sign updateLeverage to set the account's real leverage + margin mode for this asset
   const doSetLeverage = async () => {
-    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
-       adjusting a shielded position from the identity wallet does not merely deanonymise that
-       action — it LINKS the identity wallet to a position that was opened shielded, undoing
-       the protection retroactively and permanently. Refuse until the shielded route covers it.
-       Removing this guard without routing through the shielded wallet re-opens that hole. */
-    if (!shielded.address) {
-      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+    /* INCOGNITO GUARD — REFUSES UNCONDITIONALLY, and the condition matters.
+
+       This path signs with the user's OWN wallet: `runWithAgent` hands it the identity
+       signer regardless of any shielded wallet existing. Closing, cancelling or adjusting a
+       shielded position from the identity wallet does not merely deanonymise that action —
+       it LINKS the identity wallet to a position that was opened shielded, undoing the
+       protection retroactively and permanently.
+
+       The first version of this guard tested `!shielded.address`, which is exactly backwards:
+       it opened the moment a shielded wallet existed, which is precisely when there is
+       something to deanonymise. Having a shielded address does not make THIS code use it.
+
+       Delete this only together with a shielded close route — not before. */
+    if (!SHIELDED_EXIT_ROUTE) {
+      toast('Closing a shielded position needs the shielded route, which is not built yet', { icon: 'close' });
       return;
     }
 
@@ -756,13 +772,21 @@ function PerpBody({ sym }: { sym: string }) {
   const [closePct, setClosePct] = useState(100);                    // partial close (trade.xyz % chips)
   const [skipCloseCfm, setSkipCloseCfm] = useState<boolean>(() => { try { return localStorage.getItem('hence.term.skipCloseConfirm') === '1'; } catch { return false; } });
   const doClose = async (p: any, pct = 100) => {
-    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
-       adjusting a shielded position from the identity wallet does not merely deanonymise that
-       action — it LINKS the identity wallet to a position that was opened shielded, undoing
-       the protection retroactively and permanently. Refuse until the shielded route covers it.
-       Removing this guard without routing through the shielded wallet re-opens that hole. */
-    if (!shielded.address) {
-      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+    /* INCOGNITO GUARD — REFUSES UNCONDITIONALLY, and the condition matters.
+
+       This path signs with the user's OWN wallet: `runWithAgent` hands it the identity
+       signer regardless of any shielded wallet existing. Closing, cancelling or adjusting a
+       shielded position from the identity wallet does not merely deanonymise that action —
+       it LINKS the identity wallet to a position that was opened shielded, undoing the
+       protection retroactively and permanently.
+
+       The first version of this guard tested `!shielded.address`, which is exactly backwards:
+       it opened the moment a shielded wallet existed, which is precisely when there is
+       something to deanonymise. Having a shielded address does not make THIS code use it.
+
+       Delete this only together with a shielded close route — not before. */
+    if (!SHIELDED_EXIT_ROUTE) {
+      toast('Closing a shielded position needs the shielded route, which is not built yet', { icon: 'close' });
       return;
     }
 
@@ -804,13 +828,21 @@ function PerpBody({ sym }: { sym: string }) {
   const [slIn, setSlIn] = useState('');
   const [tpslBusy, setTpslBusy] = useState(false);
   const doTpsl = async () => {
-    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
-       adjusting a shielded position from the identity wallet does not merely deanonymise that
-       action — it LINKS the identity wallet to a position that was opened shielded, undoing
-       the protection retroactively and permanently. Refuse until the shielded route covers it.
-       Removing this guard without routing through the shielded wallet re-opens that hole. */
-    if (!shielded.address) {
-      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+    /* INCOGNITO GUARD — REFUSES UNCONDITIONALLY, and the condition matters.
+
+       This path signs with the user's OWN wallet: `runWithAgent` hands it the identity
+       signer regardless of any shielded wallet existing. Closing, cancelling or adjusting a
+       shielded position from the identity wallet does not merely deanonymise that action —
+       it LINKS the identity wallet to a position that was opened shielded, undoing the
+       protection retroactively and permanently.
+
+       The first version of this guard tested `!shielded.address`, which is exactly backwards:
+       it opened the moment a shielded wallet existed, which is precisely when there is
+       something to deanonymise. Having a shielded address does not make THIS code use it.
+
+       Delete this only together with a shielded close route — not before. */
+    if (!SHIELDED_EXIT_ROUTE) {
+      toast('Closing a shielded position needs the shielded route, which is not built yet', { icon: 'close' });
       return;
     }
 
@@ -840,13 +872,21 @@ function PerpBody({ sym }: { sym: string }) {
 
   // cancel a resting Hyperliquid order (native perps only)
   const doCancel = async (o: any) => {
-    /* INCOGNITO GUARD. This path signs with the user's OWN wallet. Closing, cancelling or
-       adjusting a shielded position from the identity wallet does not merely deanonymise that
-       action — it LINKS the identity wallet to a position that was opened shielded, undoing
-       the protection retroactively and permanently. Refuse until the shielded route covers it.
-       Removing this guard without routing through the shielded wallet re-opens that hole. */
-    if (!shielded.address) {
-      toast('Incognito: this needs a shielded address, and would otherwise sign as you', { icon: 'close' });
+    /* INCOGNITO GUARD — REFUSES UNCONDITIONALLY, and the condition matters.
+
+       This path signs with the user's OWN wallet: `runWithAgent` hands it the identity
+       signer regardless of any shielded wallet existing. Closing, cancelling or adjusting a
+       shielded position from the identity wallet does not merely deanonymise that action —
+       it LINKS the identity wallet to a position that was opened shielded, undoing the
+       protection retroactively and permanently.
+
+       The first version of this guard tested `!shielded.address`, which is exactly backwards:
+       it opened the moment a shielded wallet existed, which is precisely when there is
+       something to deanonymise. Having a shielded address does not make THIS code use it.
+
+       Delete this only together with a shielded close route — not before. */
+    if (!SHIELDED_EXIT_ROUTE) {
+      toast('Closing a shielded position needs the shielded route, which is not built yet', { icon: 'close' });
       return;
     }
 
@@ -1043,44 +1083,23 @@ function PerpBody({ sym }: { sym: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [confirm, skipCfm]);
 
+  /* The confirm button.
+
+     IT WAS STILL THE HYPERLIQUID PATH. Before placing anything it ran the builder-fee
+     approval: an EIP-712 `HyperliquidSignTransaction` on chainId 42161 (Arbitrum), which is
+     what the wallet popup was actually asking to sign — and then Hyperliquid answered "Must
+     deposit before performing actions" for an account that has never held funds. The confirm
+     sheet above it was already correct, showing the shielded address and Base Sepolia, which
+     made the mismatch invisible until someone pressed the button.
+
+     A sealed order has no builder, no venue fee and no fee cap to approve. There is nothing
+     to sign but the order itself, from the shielded wallet. */
   const doPlace = async () => {
-    if (submittingRef.current) return;   // guard: builder path awaits before `placing` disables the button
-    if (!confirm || !signer.sign || confirm.address !== signer.address) { setConfirm(null); return; }
+    if (submittingRef.current) return;
+    if (!confirm) { setConfirm(null); return; }
     submittingRef.current = true;
     try {
-      const addr = signer.address;
-      if (!builderEnabled || !addr) { await submitOrder(null); return; }
-
-      if (builderSessionRef.current[addr] !== 'approved') {
-        // returning users already carry the on-chain cap — check once per session
-        let onChain = false;
-        try { onChain = (await queryMaxBuilderFee(addr, cfg!.hlBuilder)) >= cfg!.hlBuilderFee; } catch { /* treat as unapproved */ }
-        if (!onChain) {
-          setApproving(true);
-          try {
-            const res = await approveBuilderFee(signer.sign, { builder: cfg!.hlBuilder, maxFeeRate: builderPct });
-            if ('error' in res) {
-              toast(res.error || 'Fee approval failed — this order goes through without it', { icon: 'close' });
-              await submitOrder(null);
-              return;
-            }
-          } catch (e: any) {
-            const msg = String(e?.message || '');
-            if (/reject|denied|declin|cancel|4001/i.test(msg)) {
-              // the user said no to the fee cap → no order; the confirm modal stays open
-              toast('Order not placed — the routing-fee approval is part of trading on Hence.', { icon: 'close' });
-              return;
-            }
-            toast(msg || 'Fee approval failed — this order goes through without it', { icon: 'close' });
-            await submitOrder(null);
-            return;
-          } finally {
-            setApproving(false);
-          }
-        }
-        builderSessionRef.current[addr] = 'approved';
-      }
-      await submitOrder(builderCode);
+      await submitOrder(null);
     } finally {
       submittingRef.current = false;
     }
@@ -1476,9 +1495,8 @@ function PerpBody({ sym }: { sym: string }) {
                 <label className="term__cfm-skip"><input type="checkbox" checked={skipCfm} onChange={(e) => { setSkipCfm(e.target.checked); try { localStorage.setItem('hence.term.skipConfirm', e.target.checked ? '1' : ''); } catch { /* storage off */ } }} /> Don't show again</label>
                 <button className="term__cfm-cancel" disabled={placing} onClick={() => setConfirm(null)}>Cancel</button>
                 <button className={'term__cfm-go term__cfm-go--' + (isLong ? 'long' : 'short')} disabled={placing || approving} onClick={doPlace}>
-                  {approving ? <><span className="term__cop-spin" /> Approve fee cap in wallet…</>
-                    : placing ? <><span className="term__cop-spin" /> 'Sealing…'</>
-                      : <>Confirm {isLong ? 'Long' : 'Short'} <Icon name="arrowRight" size={13} /></>}
+                  {placing ? <><span className="term__cop-spin" /> Sealing…</>
+                    : <>Confirm {isLong ? 'Long' : 'Short'} <Icon name="arrowRight" size={13} /></>}
                 </button>
               </div>
             </div>
@@ -1529,9 +1547,8 @@ function PerpBody({ sym }: { sym: string }) {
                 <label className="term__cfm-skip"><input type="checkbox" checked={skipCfm} onChange={(e) => { setSkipCfm(e.target.checked); try { localStorage.setItem('hence.term.skipConfirm', e.target.checked ? '1' : ''); } catch { /* storage off */ } }} /> Don't show again</label>
                 <button className="term__cfm-cancel" disabled={placing} onClick={() => setConfirm(null)}>Cancel</button>
                 <button className={'term__cfm-go term__cfm-go--' + (isLong ? 'long' : 'short')} disabled={placing || approving} onClick={doPlace}>
-                  {approving ? <><span className="term__cop-spin" /> Approve fee cap in wallet…</>
-                    : placing ? <><span className="term__cop-spin" /> 'Sealing…'</>
-                      : <>Confirm {isLong ? 'Long' : 'Short'} <Icon name="arrowRight" size={13} /></>}
+                  {placing ? <><span className="term__cop-spin" /> Sealing…</>
+                    : <>Confirm {isLong ? 'Long' : 'Short'} <Icon name="arrowRight" size={13} /></>}
                 </button>
               </div>
             </div>

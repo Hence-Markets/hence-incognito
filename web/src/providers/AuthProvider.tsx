@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { PrivyProvider, usePrivy, useDepositAddress, useFiatOnramp } from '@privy-io/react-auth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { polygon, arbitrum, base } from 'viem/chains';
+import { baseSepolia, polygon, arbitrum, base } from 'viem/chains';
 import { useAuth } from '../hooks/useAuth';
 import * as me from '../lib/me.js';
 import { PERSONA_KEY } from '../lib/persona';
@@ -128,7 +128,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Base → the general/low-fee balance + fiat onramp destination; Arbitrum →
         // Hyperliquid's USDC bridge. Universal deposits + onramps land funds here. HL
         // itself is signature-only (no chain switch) so this doesn't affect its flow.
-        supportedChains: [base, arbitrum, polygon],
+        // baseSepolia is REQUIRED for Incognito: the shielded wallet signs submitOrder on
+        // chain 84532, and a chain absent from this list makes the embedded wallet refuse with
+        // "Unsupported chainId 84532" — surfaced only as a small line under the trade button,
+        // while the confirm sheet still showed a valid shielded address. Add the mainnet chain
+        // here too before ever pointing VITE_NETWORK at Base.
+        supportedChains: [base, baseSepolia, arbitrum, polygon],
         // Themes every Privy-rendered modal (login, connect/link wallet, embedded-wallet,
         // funding/deposit/onramp) to the Hence brand — peach accent to match the login
         // gradient + interest chips. Radii + secondary surfaces + status tones are set via
