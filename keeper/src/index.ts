@@ -8,7 +8,9 @@
  * Shape copied from the Hence rebate-accrual and nightly-thesis loops, not imported.
  */
 
+import './env.js';   // MUST be first: api/access/fund all read process.env at module scope
 import { startApi } from './api.js';
+import { envReport } from './env.js';
 
 const EPOCH_SECONDS = Number(process.env.EPOCH_SECONDS ?? 300);
 const DRY_RUN = process.env.DRY_RUN !== '0';
@@ -32,6 +34,9 @@ async function main() {
   console.log(
     `[keeper] epoch=${EPOCH_SECONDS}s dry_run=${DRY_RUN} max_order=$${MAX_ORDER_USD}`
   );
+  // Which configuration actually arrived. Every one of these silently took a fallback for the
+  // whole of this project's life because nothing loaded .env.local — say it at boot instead.
+  console.log(`[keeper] env: ${envReport(['INCOGNITO_CONTRACT', 'TEAM_WALLETS', 'OMNIBUS_KEY', 'NETWORK'])}`);
   if (DRY_RUN) console.log('[keeper] DRY_RUN — no funds will move. Set DRY_RUN=0 to arm.');
   startApi();
   for (;;) {

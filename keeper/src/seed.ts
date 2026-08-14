@@ -20,6 +20,7 @@
  *     be undone (`netEpoch` is once-only and `currentEpoch` only moves forward). The script
  *     therefore refuses to start when too little of the window remains.
  */
+import './env.js';   // MUST be first: the constants below read process.env at module scope
 import {
   createWalletClient, createPublicClient, http, parseEther, formatEther,
   encodeFunctionData, type Hex, type Address,
