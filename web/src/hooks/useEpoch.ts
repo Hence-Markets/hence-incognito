@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { createPublicClient, http, type Address } from 'viem';
 import { baseSepolia, base } from 'viem/chains';
 import { pairIndex } from '../lib/markets';
+import { getLogsChunked } from '../lib/logs';
 
 const EPOCH_SECONDS = Number(import.meta.env.VITE_EPOCH_SECONDS ?? 300);
 const CONTRACT = (import.meta.env.VITE_INCOGNITO_CONTRACT ?? '').trim() as Address | '';
@@ -41,7 +42,22 @@ export type EpochState = {
   prevCount: number;
   /** which epoch `lastCrossed` describes — may be the CURRENT one, once it has been netted */
   crossedEpoch: number | null;
+  /** positions in THIS epoch's book that belong to the caller's shielded address.
+   *  "2 sealed" tells a trader nothing about whether they are in it; this does. */
+  mine: number[];
 };
+
+const ORDER_SUBMITTED = {
+  type: 'event',
+  name: 'OrderSubmitted',
+  inputs: [
+    { name: 'epoch', type: 'uint64', indexed: true },
+    { name: 'trader', type: 'address', indexed: true },
+    { name: 'pair', type: 'uint16', indexed: true },
+    { name: 'side', type: 'uint8', indexed: false },
+    { name: 'routeResidual', type: 'bool', indexed: false },
+  ],
+} as const;
 
 const ABI = [
   { type: 'function', name: 'currentEpoch', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint64' }] },
@@ -132,11 +148,13 @@ const EMPTY: EpochState = {
   prevNetted: false,
   prevCount: 0,
   crossedEpoch: null,
+  mine: [],
 };
 
-export function useEpoch(symbol?: string | null): EpochState {
+export function useEpoch(symbol?: string | null, shieldedAddress?: string | null): EpochState {
   const [state, setState] = useState<EpochState>(EMPTY);
   const pair = pairIndex(symbol);
+  const me = (shieldedAddress ?? '').toLowerCase();
 
   useEffect(() => {
     let alive = true;
@@ -208,6 +226,21 @@ export function useEpoch(symbol?: string | null): EpochState {
           }
         }
 
+        /* Which rows in this epoch's book are the caller's. The contract stores orders per
+           (epoch, pair) in submission order and OrderSubmitted fires in that same order, so
+           the log index IS the row index — no extra call needed to line them up. */
+        let mine: number[] = [];
+        if (me && pair != null && Number(sealedHere) > 0) {
+          try {
+            const all = await getLogsChunked(client, {
+              address: CONTRACT, event: ORDER_SUBMITTED, args: { epoch: epochId, pair },
+            });
+            mine = all
+              .map((l: any, i: number) => (String(l.args.trader).toLowerCase() === me ? i : -1))
+              .filter((i: number) => i >= 0);
+          } catch { mine = []; }
+        }
+
         setState({
           secondsLeft: left,
           sealed: Number(sealedHere),
@@ -218,6 +251,7 @@ export function useEpoch(symbol?: string | null): EpochState {
           prevNetted,
           prevCount,
           crossedEpoch,
+          mine,
         });
       } catch {
         // A dead RPC must not freeze the countdown — fall back to the clock and stay honest
@@ -235,7 +269,7 @@ export function useEpoch(symbol?: string | null): EpochState {
       clearInterval(poll);
       clearInterval(tick);
     };
-  }, [pair]);
+  }, [pair, me]);
 
   return state;
 }

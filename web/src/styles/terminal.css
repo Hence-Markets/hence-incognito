@@ -719,3 +719,10 @@ body.term-rsz-x .term__rsz::after, body.term-rsz-y .term__rsz::after { opacity: 
 .term__tbl--sealed td.sealed__redact { letter-spacing: .18em; color: var(--dimmest); }
 .term__tbl--sealed a { color: var(--dim); text-decoration: none; }
 .term__tbl--sealed a:hover { color: var(--text); text-decoration: underline; }
+
+/* Your own rows in the sealed book. Derived from your address in the public logs, rendered
+   only for you — it discloses nothing that was not already on chain. */
+.sealed__rows li.is-mine { background: rgba(120, 220, 170, 0.07); border-radius: 4px; }
+.sealed__rows li.is-mine .sealed__bar { background: var(--hidden, #9fe0c0); opacity: .55; }
+.sealed__mine { font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--hidden, #9fe0c0); margin-left: 6px; }
+.sealed__mine-n { font-style: normal; color: var(--hidden, #9fe0c0); font-weight: 600; }

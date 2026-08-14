@@ -697,10 +697,11 @@ function PerpBody({ sym }: { sym: string }) {
   // reaches the ticket via a pasted link. Treated read-only exactly as Hence treats a
   // non-tradeable market — the UI path already exists, it just needs the venue in the test.
   const readOnlyMarket = !market.isTradeable(pair) || !isAvantisSymbol(pair);
-  // Per market: "6 sealed" must mean six orders that can cross with YOURS, not six spread
-  // across markets that will each net alone.
-  const epoch = useEpoch(pair);
   const shielded = useShielded();   // the address orders execute from — never the user's own
+  // Per market: "6 sealed" must mean six orders that can cross with YOURS, not six spread
+  // across markets that will each net alone. The shielded address is passed so the book can
+  // mark which rows are the viewer's — declared first, because this reads it.
+  const epoch = useEpoch(pair, shielded.address);
   // Percentage buttons: buying power = available collateral × the SELECTED leverage. The order flow
   // applies this leverage on HL before opening, so sizing matches what actually executes. HL still
   // enforces the true limit; this is a convenience estimate.
@@ -1227,7 +1228,7 @@ function PerpBody({ sym }: { sym: string }) {
               the epoch closes — the panel shows what is actually knowable. */}
           <SealedBook sym={pair} resizer={rsz('book', 'l')} sealed={epoch.sealed} sealedAll={epoch.sealedAll}
             secondsLeft={epoch.secondsLeft} lastCrossed={epoch.lastCrossed} live={epoch.live}
-            epochId={epoch.epochId} prevNetted={epoch.prevNetted} prevCount={epoch.prevCount} crossedEpoch={epoch.crossedEpoch} />
+            epochId={epoch.epochId} prevNetted={epoch.prevNetted} prevCount={epoch.prevCount} crossedEpoch={epoch.crossedEpoch} mine={epoch.mine} />
 
           {/* order entry + account card (right column) */}
           <aside className="term__entry">

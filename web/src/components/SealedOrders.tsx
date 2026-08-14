@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { createPublicClient, http, type Address } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { MARKETS } from '../lib/markets';
+import { getLogsChunked } from '../lib/logs';
 
 const IS_MAINNET = import.meta.env.VITE_NETWORK === 'mainnet';
 const CHAIN = IS_MAINNET ? base : baseSepolia;
@@ -70,16 +71,13 @@ export default function SealedOrders({ shieldedAddress, currentEpoch }: {
 
     const read = async () => {
       try {
-        const latest = await pub.getBlockNumber();
-        // Public RPCs cap log ranges; ~50k blocks is roughly a day on Base, which is more
-        // history than a demo needs and short enough to be served in one call.
-        const from = latest > 50_000n ? latest - 50_000n : 0n;
-        const logs = await pub.getLogs({
+        // 50_000 blocks in one call is what produced "RPC Request failed": the public
+        // endpoint caps eth_getLogs at 10,000 and answers 413. Chunked, and anchored at the
+        // deployment block so a trader's history stays complete rather than scrolling off.
+        const logs = await getLogsChunked(pub, {
           address: CONTRACT,
           event: ORDER_SUBMITTED,
           args: { trader: shieldedAddress as Address },
-          fromBlock: from,
-          toBlock: latest,
         });
 
         // One bookStatus per (epoch, pair) actually present, not per row — a trader with six

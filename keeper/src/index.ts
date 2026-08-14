@@ -12,6 +12,7 @@ import './env.js';   // MUST be first: api/access/fund all read process.env at m
 import { startApi } from './api.js';
 import { envReport } from './env.js';
 import { tick } from './tick.js';
+import { fillerTick, FILLER_ON } from './filler.js';
 
 const EPOCH_SECONDS = Number(process.env.EPOCH_SECONDS ?? 300);
 const DRY_RUN = process.env.DRY_RUN !== '0';
@@ -31,10 +32,14 @@ async function main() {
   // whole of this project's life because nothing loaded .env.local — say it at boot instead.
   console.log(`[keeper] env: ${envReport(['INCOGNITO_CONTRACT', 'TEAM_WALLETS', 'OMNIBUS_KEY', 'NETWORK'])}`);
   if (DRY_RUN) console.log('[keeper] DRY_RUN — no funds will move. Set DRY_RUN=0 to arm.');
+  if (FILLER_ON) console.log('[keeper] FILLER ON — background orders are real transactions from wallets we control. Disclose that.');
   startApi();
   for (;;) {
     try {
       await tick();
+      // Background flow, so an epoch is never empty for the next person who walks up. Off by
+      // default; refuses on mainnet. Runs AFTER netting so it never races a close it caused.
+      await fillerTick();
     } catch (err) {
       console.error('[keeper] tick failed', err); // a bad tick must never kill the loop
     }

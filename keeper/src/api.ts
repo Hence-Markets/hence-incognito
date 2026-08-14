@@ -4,6 +4,7 @@ import { isAllowed, cohortSize } from './access.js';
 import { fundShielded, funderStatus } from './fund.js';
 import { verifyFundRequest } from './verify.js';
 import { outcomes, keeperStatus } from './tick.js';
+import { fillerStatus } from './filler.js';
 
 const PORT = Number(process.env.PORT ?? 4400);
 
@@ -70,7 +71,8 @@ export function startApi() {
     if (req.method === 'GET' && req.url === '/api/health') {
       // Reports whether a funder is configured and what it holds — never the key.
       funderStatus()
-        .then((f) => json(res, 200, { ok: true, cohort: cohortSize(), funder: f }))
+        .then((f) => json(res, 200, { ok: true, cohort: cohortSize(), filler: fillerStatus(),
+        funder: f }))
         .catch(() => json(res, 200, { ok: true, cohort: cohortSize() }));
       return;
     }

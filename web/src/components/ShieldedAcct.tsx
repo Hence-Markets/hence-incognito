@@ -24,6 +24,7 @@ import { createPublicClient, http, formatEther, type Address } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 import { Icon } from './Icon';
 import { Skeleton } from './Loading';
+import { getLogsChunked } from '../lib/logs';
 
 const IS_MAINNET = import.meta.env.VITE_NETWORK === 'mainnet';
 const CHAIN = IS_MAINNET ? base : baseSepolia;
@@ -81,16 +82,10 @@ export default function ShieldedAcct({ which, shielded, epochId, secondsLeft, li
 
       if (!CONTRACT || epochId == null) return;
       try {
-        const latest = await pub.getBlockNumber();
-        // ~5000 blocks is a couple of hours on Base — comfortably more than one 300s epoch,
-        // and short enough that public RPCs will serve the range.
-        const from = latest > 5000n ? latest - 5000n : 0n;
-        const logs = await pub.getLogs({
+        const logs = await getLogsChunked(pub, {
           address: CONTRACT,
           event: ORDER_SUBMITTED,
           args: { epoch: BigInt(epochId), trader: addr as Address },
-          fromBlock: from,
-          toBlock: latest,
         });
         if (alive) setSealed(logs.length);
       } catch {

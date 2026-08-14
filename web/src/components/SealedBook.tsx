@@ -39,6 +39,8 @@ type Props = {
   prevCount?: number;
   /** which epoch the crossed figure describes */
   crossedEpoch?: number | null;
+  /** row indices in this epoch's book belonging to the viewer's shielded address */
+  mine?: number[];
   /** seconds until the epoch closes and netting runs */
   secondsLeft?: number;
   /** share of the LAST epoch that crossed internally, 0–1 */
@@ -68,7 +70,7 @@ const clockLabel = (secondsLeft: number, live: boolean, sealed: number, netted: 
 export function SealedBook({
   sym, resizer, sealed = 0, sealedAll = 0, secondsLeft = 0,
   lastCrossed = null, live = false, epochId = null, prevNetted = false, prevCount = 0,
-  crossedEpoch = null,
+  crossedEpoch = null, mine = [],
 }: Props) {
   const [tab, setTab] = useState<'sealed' | 'epochs'>('sealed');
   const asideRef = useRef<HTMLElement>(null);
@@ -123,9 +125,11 @@ export function SealedBook({
           <>
             <div className="term__book-head"><span>Order</span><span>Size</span><span>Trader</span></div>
             <div className="term__book-body sealed">
+              {/* "2 sealed" says nothing about whether YOU are one of them, which is the first
+                  thing a trader wants to know after pressing the button. */}
               <div className="sealed__count">
                 <b>{sealed}</b>
-                <span>sealed this epoch</span>
+                <span>sealed this epoch{mine.length ? <> · <em className="sealed__mine-n">{mine.length} yours</em></> : ''}</span>
               </div>
 
               {sealed === 0 ? (
@@ -133,13 +137,16 @@ export function SealedBook({
               ) : (
                 <ul className="sealed__rows" aria-label={`${sealed} sealed orders`}>
                   {Array.from({ length: Math.min(sealed, 12) }).map((_, i) => (
-                    <li key={i}>
+                    <li key={i} className={mine.includes(i) ? 'is-mine' : undefined}>
                       <span className="sealed__ix">{String(i + 1).padStart(2, '0')}</span>
                       {/* A bar where a size would be. The widths are DECORATIVE and encode
                           nothing — deriving them from real sizes would leak the very thing
                           the encryption protects. */}
                       <span className="sealed__bar" style={{ width: `${34 + ((i * 23) % 52)}%` }} />
                       <span className="sealed__redact">•••••</span>
+                      {/* Only the viewer sees this — it is derived from their own address in
+                          the logs, which is public anyway. It reveals nothing to anyone else. */}
+                      {mine.includes(i) && <span className="sealed__mine">yours</span>}
                     </li>
                   ))}
                 </ul>
