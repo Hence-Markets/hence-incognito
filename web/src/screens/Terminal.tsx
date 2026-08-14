@@ -13,7 +13,9 @@ const PredictBody = lazy(() => import('./PredictTerminal').then((m) => ({ defaul
 import { Icon } from '../components/Icon';
 import { Logo } from '../components/Logo';
 import { TradingChart, type Candle } from '../components/TradingChart';
-import { OrderBook, type LiveFeed } from '../components/OrderBook';
+import { type LiveFeed } from '../components/OrderBook';
+import { SealedBook } from '../components/SealedBook';
+import { useEpoch } from '../hooks/useEpoch';
 import { HlFundSheet } from '../components/HlFundSheet';
 import { openStream, type StreamStatus, type BookMsg, type TradesMsg } from '../lib/stream';
 import { MarketSelect, getWatch } from '../components/MarketSelect';
@@ -684,6 +686,7 @@ function PerpBody({ sym }: { sym: string }) {
   // reaches the ticket via a pasted link. Treated read-only exactly as Hence treats a
   // non-tradeable market — the UI path already exists, it just needs the venue in the test.
   const readOnlyMarket = !market.isTradeable(pair) || !isAvantisSymbol(pair);
+  const epoch = useEpoch();   // countdown + sealed count for the sealed book
   // Percentage buttons: buying power = available collateral × the SELECTED leverage. The order flow
   // applies this leverage on HL before opening, so sizing matches what actually executes. HL still
   // enforces the true limit; this is a convenience estimate.
@@ -1106,7 +1109,10 @@ function PerpBody({ sym }: { sym: string }) {
           </section>
 
           {/* order book — fed by the terminal's single stream; polls only as fallback */}
-          <OrderBook sym={pair} enabled={ready} resizer={rsz('book', 'l')} live={{ book: streamDataCurrent ? liveBook : null, trades: streamDataCurrent ? liveTrades : null, status: streamStatus }} />
+          {/* INCOGNITO: the order book is replaced, not hidden. Avantis is vault-backed and
+              oracle-priced so there is no CLOB to render, and our own flow is encrypted until
+              the epoch closes — the panel shows what is actually knowable. */}
+          <SealedBook sym={pair} resizer={rsz('book', 'l')} sealed={epoch.sealed} secondsLeft={epoch.secondsLeft} lastCrossed={epoch.lastCrossed} />
 
           {/* order entry + account card (right column) */}
           <aside className="term__entry">
