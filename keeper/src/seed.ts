@@ -71,6 +71,7 @@ const ABI = [
     ],
   },
   { type: 'function', name: 'MIN_ORDERS_TO_REVEAL', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { type: 'function', name: 'epochSeconds', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint64' }] },
 ] as const;
 
 const INCO_ABI = [
@@ -92,10 +93,11 @@ async function main() {
     ...SHORTS.map((size) => ({ size, side: 1 as const })),
   ];
 
-  const [epochId, fee, floor] = await Promise.all([
+  const [epochId, fee, floor, epochSeconds] = await Promise.all([
     pub.readContract({ address: CONTRACT, abi: ABI, functionName: 'currentEpoch' }),
     pub.readContract({ address: INCO, abi: INCO_ABI, functionName: 'getFee' }),
     pub.readContract({ address: CONTRACT, abi: ABI, functionName: 'MIN_ORDERS_TO_REVEAL' }),
+    pub.readContract({ address: CONTRACT, abi: ABI, functionName: 'epochSeconds' }),
   ]);
   const ep = (await pub.readContract({ address: CONTRACT, abi: ABI, functionName: 'epochs', args: [epochId] })) as any;
   const closesAt = Number(ep[1]);
@@ -116,12 +118,26 @@ async function main() {
 
   /* An order takes a couple of seconds: encrypt, fund, submit, confirm. Require comfortable
      headroom rather than "probably enough" — a seed split across an epoch boundary leaves two
-     books that may BOTH be under the floor, and nothing can merge them afterwards. */
+     books that may BOTH be under the floor, and nothing can merge them afterwards.
+
+     AN OVERDUE EPOCH IS NOT A PROBLEM, it is the normal resting state. `_rollEpochIfDue()` runs
+     INSIDE submitOrder, so with no flow the open epoch sits past its close indefinitely and
+     will never roll on its own — telling the operator to "wait for the next epoch" would be
+     advice to wait forever. The first order rolls it and opens a full-length window, and every
+     order including that one lands in the NEW epoch. So the time we have is the whole window,
+     not the negative remainder of a window that expired hours ago. */
+  const rollsOnFirstOrder = left <= 0;
+  const window = rollsOnFirstOrder ? Number(epochSeconds) : left;
   const needed = orders.length * 8 + 20;
-  if (left < needed) {
+
+  if (rollsOnFirstOrder) {
+    console.log(`[seed] epoch #${epochId} closed ${-left}s ago and only rolls on a submit — the`);
+    console.log(`[seed]   first order opens #${Number(epochId) + 1} with a fresh ${epochSeconds}s window; all ${orders.length} land there`);
+  }
+  if (window < needed) {
     throw new Error(
-      `only ${left}s left in epoch #${epochId} and this needs ~${needed}s. ` +
-      `Wait for the next epoch rather than splitting the book across two.`
+      `only ${window}s of epoch #${epochId} usable and this needs ~${needed}s. ` +
+      `Submit one throwaway order to roll the epoch, then seed into the fresh window.`
     );
   }
 
@@ -134,6 +150,10 @@ async function main() {
   const zap = Lightning.latest(process.env.NETWORK === 'mainnet' ? 'mainnet' : 'testnet');
 
   const placed: { addr: string; size: number; side: string; tx: string }[] = [];
+  /* The epoch the book is being built in — learned from the FIRST order's own log rather than
+     assumed, because that order may itself have rolled the epoch. Every later order is checked
+     against it: a split book is unrecoverable, so it is worth stopping the moment one starts. */
+  let bookEpoch: bigint | null = null;
 
   for (const [i, o] of orders.entries()) {
     // A fresh key per order. Reusing one address for ten orders would put ten orders in one
@@ -161,7 +181,22 @@ async function main() {
       }),
       value: fee as bigint,
     });
-    await pub.waitForTransactionReceipt({ hash: tx });
+    const rcpt = await pub.waitForTransactionReceipt({ hash: tx });
+
+    // OrderSubmitted(uint64 indexed epoch, address indexed trader, uint16 indexed pair, ...)
+    // — topic 1 is the epoch this order actually landed in. Read it rather than polling
+    // currentEpoch, which can move between the receipt and the poll.
+    const log = rcpt.logs.find((l) => l.address.toLowerCase() === CONTRACT.toLowerCase());
+    const landed = log?.topics?.[1] ? BigInt(log.topics[1]) : null;
+    if (landed != null) {
+      if (bookEpoch == null) bookEpoch = landed;
+      else if (landed !== bookEpoch) {
+        throw new Error(
+          `the epoch rolled mid-seed (#${bookEpoch} → #${landed}) after ${placed.length} orders. ` +
+          `The book is split and cannot be merged — re-run to build a clean one in the new epoch.`
+        );
+      }
+    }
 
     placed.push({ addr: acct.address, size: o.size, side: o.side === 0 ? 'long' : 'short', tx });
     console.log(`[seed] ${String(i + 1).padStart(2)}/${orders.length}  ${o.side === 0 ? 'LONG ' : 'SHORT'} $${String(o.size).padStart(6)}  ${acct.address}  ${tx}`);
@@ -171,16 +206,8 @@ async function main() {
     await sleep(300);
   }
 
-  const after = await pub.readContract({ address: CONTRACT, abi: ABI, functionName: 'currentEpoch' });
   console.log(`\n[seed] done — ${placed.length} orders sealed`);
-  if (after !== epochId) {
-    console.error(
-      `[seed] WARNING: the epoch rolled mid-seed (#${epochId} → #${after}). The book is SPLIT ` +
-      `across two epochs and each half may sit under the reveal floor. Seed again into a fresh epoch.`
-    );
-  } else {
-    console.log(`[seed] all of it landed in epoch #${epochId} — one book, ready to net`);
-  }
+  console.log(`[seed] all of it landed in epoch #${bookEpoch} — one book, ready to net`);
   console.log(`[seed] disclose this: ${placed.length} orders, ${placed.length} wallets, all controlled by one person.`);
 }
 
