@@ -1,0 +1,22 @@
+# The keeper: nets closed epochs, publishes aggregates, decrypts only the residual.
+#
+# THIS IMAGE HOLDS THE ONLY SECRET IN THE SYSTEM. OMNIBUS_KEY / KEEPER_KEY arrive as RUNTIME
+# environment variables from the VM — never build args, never baked into a layer, and never in
+# the repo, which is public. A build arg would be readable in the image history forever.
+#
+# What the key can do is deliberately small: close an epoch, publish an aggregate, and send a
+# gas grant within a capped budget. It cannot move collateral or read an individual order, so a
+# compromised keeper stalls the book rather than draining or deanonymising it.
+
+FROM node:22-alpine
+WORKDIR /app
+
+COPY keeper/package.json keeper/package-lock.json* ./
+RUN npm install --no-audit --no-fund
+
+COPY keeper/ ./
+
+# The loop is long-lived and must survive a bad tick; index.ts already guards each iteration.
+# Restart policy lives in compose so a crash-loop is visible rather than silently retried here.
+EXPOSE 4400
+CMD ["npx", "tsx", "src/index.ts"]
