@@ -17,8 +17,8 @@ import { type LiveFeed } from '../components/OrderBook';
 import { SealedBook } from '../components/SealedBook';
 import { useEpoch } from '../hooks/useEpoch';
 import { useShielded } from '../lib/useShielded';
+import ShieldedAcct from '../components/ShieldedAcct';
 import { placeShieldedOrder, shieldedReady } from '../lib/order';
-import { HlFundSheet } from '../components/HlFundSheet';
 import { openStream, type StreamStatus, type BookMsg, type TradesMsg } from '../lib/stream';
 import { MarketSelect, getWatch } from '../components/MarketSelect';
 import { ScreenHead } from '../components/ScreenHead';
@@ -201,7 +201,6 @@ function PerpBody({ sym }: { sym: string }) {
   };
 
   const [cancelling, setCancelling] = useState<number | null>(null);
-  const [fundSheet, setFundSheet] = useState<'deposit' | 'withdraw' | null>(null);
 
   // one-shot copilot handoff: a plan leg armed via armTicket() SEEDS the ticket inputs for
   // this symbol (side/amount/type/limit + the leverage SLIDER only — appliedLev still needs
@@ -664,15 +663,6 @@ function PerpBody({ sym }: { sym: string }) {
 
   const pickPair = (s: string) => { setPaletteOpen(false); nav('/terminal/' + s.toUpperCase()); };
   const reEntry = () => {/* state-driven, no-op */};
-  // Deposit / Transfer / Withdraw on the account card. Deposit + Withdraw open the real HL
-  // funding sheet (Arbitrum USDC ⇄ Hyperliquid). Transfer (between sub-accounts) isn't wired yet.
-  const acctAction = (label: string) => {
-    if (label === 'Deposit') { setFundSheet('deposit'); return; }
-    if (label === 'Withdraw') { setFundSheet('withdraw'); return; }
-    if (!hl.connected) { window.dispatchEvent(new CustomEvent('hence:accounts')); return; }
-    toast(`${label} is coming soon`, { icon: 'wallet' });
-  };
-
   const mark = realMark;
   const tradeCoin = market.coinFor(pair);
   /* Campaign scope must key off the coin the ORDER carries, not the symbol on screen: the
@@ -1405,11 +1395,11 @@ function PerpBody({ sym }: { sym: string }) {
               );
             })()}
 
-            {/* account card — docked at the bottom of the right column (trade.xyz anatomy).
-                Desktop: shows here. Mobile: hidden here, rendered in the Account mtab instead. */}
-            <AcctCard which="desk" acctName={acctName} acctMenu={acctMenu} setAcctMenu={setAcctMenu}
-              accts={accts} setAcct={setAcct} hl={hl} unrealizedPnl={unrealizedPnl} acctAction={acctAction}
-              rebate={rebate} />
+            {/* INCOGNITO: the account that executes, not the account you funded elsewhere.
+                The Hyperliquid card (AcctCard, below) showed real equity and Deposit/Withdraw for
+                an account this app never touches — accurate, and a lie in this context. */}
+            <ShieldedAcct which="desk" shielded={shielded} epochId={epoch.epochId}
+              secondsLeft={epoch.secondsLeft} live={epoch.live} />
           </aside>
 
           {/* bottom positions/orders — spans under news/chart/book only (right column is full-height) */}
@@ -1427,7 +1417,7 @@ function PerpBody({ sym }: { sym: string }) {
                 return <button key={tb} className={tb === btab ? 'on' : ''} onClick={() => setBtab(tb)}>{tb}{n > 0 ? ` (${n})` : ''}</button>;
               })}</div>
               <div className="term__bottom-tools">
-                <span className="muted">Live Hyperliquid account data</span>
+                <span className="muted">Sealed orders · Base {import.meta.env.VITE_NETWORK === 'mainnet' ? 'mainnet' : 'Sepolia'}</span>
                 {btab === 'Positions' && hl.positions.length > 0 && <button className="term__closeall" disabled={closingAll} onClick={() => setCloseAllCfm(true)}>
               {closingAll ? 'Closing…' : 'Close all'}
             </button>}
@@ -1441,15 +1431,12 @@ function PerpBody({ sym }: { sym: string }) {
           </div>
 
           {/* mobile-only: account card lives in the Account mtab (hidden on desktop) */}
-          <AcctCard which="mob" acctName={acctName} acctMenu={acctMenu} setAcctMenu={setAcctMenu}
-            accts={accts} setAcct={setAcct} hl={hl} unrealizedPnl={unrealizedPnl} acctAction={acctAction}
-            rebate={rebate} />
+          <ShieldedAcct which="mob" shielded={shielded} epochId={epoch.epochId}
+            secondsLeft={epoch.secondsLeft} live={epoch.live} />
         </div>
       </div>
 
       {paletteOpen && <MarketSelect onPick={pickPair} onClose={() => setPaletteOpen(false)} />}
-
-      {fundSheet && <HlFundSheet mode={fundSheet} onClose={() => setFundSheet(null)} />}
 
       {confirm && !skipCfm && (() => {
         const c = confirm; const isLong = c.params.isBuy; const coin = c.params.coin;
@@ -1629,74 +1616,10 @@ function PerpBody({ sym }: { sym: string }) {
   );
 }
 
-// Account card (right-column dock desktop / Account mtab mobile). One source, rendered twice;
-// CSS toggles which copy is visible per breakpoint + data-mtab (see terminal.css).
-function AcctCard({ which, acctName, acctMenu, setAcctMenu, accts, setAcct, hl, unrealizedPnl, acctAction, rebate }: {
-  which: 'desk' | 'mob';
-  acctName: string | undefined | false;
-  acctMenu: boolean;
-  setAcctMenu: React.Dispatch<React.SetStateAction<boolean>>;
-  accts: { id: string; name: string }[];
-  setAcct: (id: string) => void;
-  hl: any;
-  unrealizedPnl: number;
-  acctAction: (label: string) => void;
-  /** xyz rebate campaign totals; null when the campaign is off or the user is signed out */
-  rebate?: { accrued: number; paid: number } | null;
-}) {
-  // connected but the first clearinghouse fetch is still in flight → shimmer, don't flash $0.00.
-  const av = (real: React.ReactNode, disc: React.ReactNode = '—') =>
-    hl.connected ? (hl.loaded ? real : hl.unavailable ? 'Unavailable' : <Skeleton w={54} h={12} />) : disc;
-  return (
-    <div className={'term__acctcard term__acctcard--' + which}>
-      <div className="term__ac-top">
-        <div className="term__ac-sel-wrap">
-          <button className="term__acct-sel term__ac-sel" onClick={() => setAcctMenu((v) => !v)}><Icon name="wallet" size={13} /><span>{acctName || 'Select account'}</span><Icon name="chevDown" size={13} /></button>
-          {acctMenu && (
-            <div className="term__menu term__menu--acct term__menu--up">
-              {accts.length ? accts.map((a) => <button key={a.id} className="term__menu-i" onClick={() => { setAcct(a.id); setAcctMenu(false); }}>{a.name}</button>) : <div className="term__menu-empty">No accounts connected</div>}
-              <button className="term__menu-i term__menu-i--cta" onClick={() => { setAcctMenu(false); window.dispatchEvent(new CustomEvent('hence:accounts')); }}><Icon name="plus" size={13} /> {accts.length ? 'Manage accounts' : 'Connect an account'}</button>
-            </div>
-          )}
-        </div>
-        <span className={'term__ac-chg' + (hl.loaded ? '' : ' is-flat')}>{hl.loaded ? 'Live' : hl.unavailable ? 'Unavailable' : ''}</span>
-      </div>
-      <div className="term__ac-eq">
-        <span className="term__ac-eq-l">Total Equity</span>
-        <b className="term__ac-eq-v">{av(fmtUsd(hl.accountValue))}</b>
-      </div>
-      <div className="term__ac-btns">
-        <button className="term__ac-btn term__ac-btn--pri" onClick={() => acctAction('Deposit')}>Deposit</button>
-        <button className="term__ac-btn" onClick={() => acctAction('Transfer')}>Transfer</button>
-        <button className="term__ac-btn" onClick={() => acctAction('Withdraw')}>Withdraw</button>
-      </div>
-      <div className="term__ac-rows">
-        {!hl.unified && <div className="term__ac-row"><span>Spot</span><b>—</b></div>}
-        <div className="term__ac-row"><span>{hl.unified ? 'Unified balance' : 'Perps'}</span><b>{av(fmtUsd(hl.accountValue))}</b></div>
-        <div className="term__ac-row term__ac-row--sub"><span>Unrealized PNL</span><b>{av(fmtUsd(unrealizedPnl))}</b></div>
-        <div className="term__ac-row term__ac-row--sub"><span>Margin used</span><b>{av(fmtUsd(hl.marginUsed))}</b></div>
-        <div className="term__ac-row term__ac-row--sub"><span>Cross Account Leverage</span><b>—</b></div>
-        {/* xyz fee rebates sit WITH the balances, because that is what they are: money owed
-            and money already delivered into this account. Accrued is what the next payout
-            will send (settles from $1); rebated-to-date is lifetime. */}
-        {rebate ? (
-          <>
-            <div className="term__ac-row term__ac-row--reb">
-              <span title="trade.xyz fees rebated — pays into this balance once it crosses $1">xyz rebate · pending</span>
-              <b>{fmtUsd(rebate.accrued)}</b>
-            </div>
-            <div className="term__ac-row term__ac-row--sub">
-              <span>Rebated to date</span><b>{fmtUsd(rebate.paid)}</b>
-            </div>
-          </>
-        ) : null}
-        {/* Vaults / Earn / Staking rows lived here — always "—" (no integration reads them),
-            and permanently-empty rows are clutter that cost the column its no-scroll fit.
-            Restore per-row when a real balance source exists. */}
-      </div>
-    </div>
-  );
-}
+/* The Hyperliquid AcctCard was removed here, not commented out. It rendered real equity,
+   margin and Deposit/Transfer/Withdraw for an account this app never touches. Keeping a dead
+   copy around is how Ticket.tsx got edited for an hour while the running screen imported
+   something else — see components/ShieldedAcct.tsx for what replaced it. */
 
 function TickerTape({ ready }: { ready: boolean }) {
   const mv0 = ready ? market.topMovers('crypto', 14) : { gainers: [], losers: [] };

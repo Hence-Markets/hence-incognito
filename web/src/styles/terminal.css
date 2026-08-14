@@ -284,6 +284,15 @@
 .term__ac-row b { color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
 .term__ac-row--sub { padding-left: 12px; color: var(--dimmer); }
 .term__ac-row--sub span::before { content: '└ '; color: var(--dimmest); }
+
+/* INCOGNITO account rail. The headline slot holds an ADDRESS, not a figure — 22px tabular
+   numerals overflow it and read as money, which is the impression this card exists to undo. */
+.term__ac-eq-v--addr { font-size: 15px; font-weight: 600; letter-spacing: 0; font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
+/* The HL card had exactly three buttons and hard-coded a 3-column grid; this row has one or
+   two, so a grid left "Create shielded account" wrapping onto three lines in an 82px cell. */
+.term__ac-btns--inc { display: flex; gap: 6px; }
+.term__ac-btns--inc > * { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
+.term__ac-note { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-1); font-size: 10.5px; line-height: 1.45; color: var(--dimmest); }
 .term__menu.term__menu--up { top: auto; bottom: 100%; margin-top: 0; margin-bottom: 6px; }
 
 /* ---- bottom (positions/orders) ---- */
