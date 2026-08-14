@@ -104,6 +104,37 @@ These are in the spec's open questions and any of them can cost you an hour on t
 3. **Shielded wallet provenance** — a second Privy embedded wallet, or a keypair this service
    manages? Confirm what Privy supports before building around either.
 
+
+## Deploying the contract (Base Sepolia)
+
+Everything is ready except gas. Generate a throwaway deployer and fund it:
+
+```bash
+cast wallet new                      # prints an address + key; keep the key OUT of the repo
+# fund the address at a Base Sepolia faucet, then:
+
+cd contracts
+DEPLOYER_KEY=0x... forge script script/Deploy.s.sol:Deploy \
+  --rpc-url https://sepolia.base.org --broadcast -vvv
+```
+
+The script refuses to broadcast with an empty wallet and says why, rather than failing
+mid-run with something that reads like a node error.
+
+It prints the address to put in `web/.env.local`:
+
+```
+VITE_INCOGNITO_CONTRACT=0x...
+```
+
+That is what turns the sealed book's `0 sealed` and `—` into real on-chain numbers, and what
+`lib/order.ts` is waiting for before it will place anything.
+
+**The deployer is not a wallet with a job.** It needs gas and nothing else — no user funds ever
+touch it. `KEEPER_ADDRESS` (defaults to the deployer) may only close epochs and publish
+aggregates; it cannot move anyone's collateral. Keeping those roles apart means a compromised
+keeper stalls the book instead of draining it.
+
 ## Safety rails
 
 `DRY_RUN=1` and `MAX_ORDER_USD` exist so the default posture is harmless. The omnibus key funds
