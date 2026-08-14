@@ -18,7 +18,7 @@
 import { createWalletClient, createPublicClient, http, parseEther, formatEther, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, baseSepolia } from 'viem/chains';
-import { isAllowed } from './access.js';
+
 
 const CHAIN = process.env.NETWORK === 'mainnet' ? base : baseSepolia;
 
@@ -63,15 +63,10 @@ export async function fundShielded(address: string): Promise<FundResult> {
   if (!k) return { ok: false, reason: 'Funding is not configured' };
   if (!/^0x[0-9a-fA-F]{40}$/.test(address)) return { ok: false, reason: 'Not an address' };
 
-  // The cohort gate again, server-side. The web app checks it too, but that check is a
-  // courtesy — this one is the one that holds, because it is the one guarding money.
-  if (!isAllowed(address)) {
-    // NOTE: this asks whether the SHIELDED address is in the cohort, which it will not be —
-    // a shielded wallet is by definition not the identity wallet. Until the funder can verify
-    // the requester's Privy token and check THEIR identity address, funding stays off. Opening
-    // it without that check makes this an open faucet.
-    return { ok: false, reason: 'Not eligible for funding' };
-  }
+  // Eligibility is settled BEFORE this is called, by verifyFundRequest — it proves the caller
+  // controls a cohort identity wallet and that the signature is bound to THIS shielded address.
+  // This function does the money; verify.ts does the who. Calling it without that check would
+  // make it an open faucet, so it is never exported for direct use by the route.
 
   if (spent + GRANT > TOTAL_BUDGET) {
     return { ok: false, reason: 'Funding budget exhausted' };

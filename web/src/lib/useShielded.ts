@@ -17,7 +17,7 @@
  */
 import { useCallback, useMemo, useState } from 'react';
 import { useCreateWallet, useWallets } from '@privy-io/react-auth';
-import { createWalletClient, custom, type WalletClient, type Hex } from 'viem';
+import { createPublicClient, createWalletClient, custom, http, type WalletClient, type Hex } from 'viem';
 import { base, baseSepolia } from 'viem/chains';
 
 const isEmbedded = (w: any) => (w?.walletClientType || '').startsWith('privy');
@@ -41,7 +41,25 @@ export type Shielded = {
   create: () => Promise<string | null>;
   /** a viem WalletClient bound to the SHIELDED wallet, on the right chain. Null if unavailable. */
   getClient: () => Promise<{ address: string; client: WalletClient } | null>;
+  /** make sure the shielded wallet can pay for an order; asks the keeper for a grant if not */
+  ensureFunded: () => Promise<{ ok: boolean; reason?: string }>;
 };
+
+/** Enough for the Inco input fee (1e12 wei) plus gas, several times over. Below this an order
+ *  would revert at the fee check, which reads as "the app is broken" rather than "top me up". */
+const MIN_BALANCE = 300_000_000_000_000n;   // 0.0003 ETH
+
+/** MUST match keeper/src/verify.ts fundMessage() byte for byte, or recovery yields a different
+ *  address and every request is refused for a reason that looks like ineligibility. */
+const fundMessage = (shielded: string, issuedAt: number) =>
+  [
+    'Hence Incognito — fund shielded wallet',
+    '',
+    `shielded: ${shielded.toLowerCase()}`,
+    `issued:   ${issuedAt}`,
+    '',
+    'Signing proves you control this account. It authorises a small gas grant and nothing else.',
+  ].join('\n');
 
 export function useShielded(): Shielded {
   const { wallets } = useWallets();
@@ -51,6 +69,12 @@ export function useShielded(): Shielded {
 
   const wallet = useMemo(() => wallets.find(isEmbedded) ?? null, [wallets]);
   const address = wallet?.address ?? null;
+
+  /* The IDENTITY wallet — the connected one. Used for exactly ONE thing: signing the funding
+     request, which proves cohort membership. It must never sign an order, and it never sends
+     the grant itself (that transfer would link the two addresses on-chain forever — the
+     omnibus exists precisely so nobody can draw that line). */
+  const identity = useMemo(() => wallets.find((w) => !isEmbedded(w)) ?? null, [wallets]);
 
   const create = useCallback(async () => {
     if (address) return address;          // idempotent: never mint a second one by accident
@@ -111,10 +135,54 @@ export function useShielded(): Shielded {
     }
   }, [wallet, address]);
 
+  /* Ask the keeper for a gas grant, but only if one is actually needed.
+
+     The IDENTITY wallet signs — that is what proves cohort membership without the shielded
+     address ever needing to be in the cohort, and without this app holding a Privy app secret.
+     The message binds the shielded address, so a captured signature cannot be replayed to fund
+     someone else's wallet. It is a SIGNATURE, not a transaction: nothing goes on chain from the
+     identity wallet, so no link is published. */
+  const ensureFunded = useCallback(async () => {
+    if (!address) return { ok: false, reason: 'No shielded address' };
+
+    // Already funded is the common case after the first order — never prompt for a signature
+    // we do not need. A signature request with no visible cause reads as a phishing attempt.
+    try {
+      const pub = createPublicClient({ chain: CHAIN, transport: http() });
+      if ((await pub.getBalance({ address: address as Hex })) >= MIN_BALANCE) return { ok: true };
+    } catch {
+      // Can't read the balance — ask anyway. The keeper refuses a wallet that already has
+      // enough, so the worst case is a wasted round trip, not a double grant.
+    }
+
+    if (!identity?.address) return { ok: false, reason: 'Connect your wallet to enable trading' };
+    try {
+      const issuedAt = Date.now();
+      const provider = await identity.getEthereumProvider();
+      const signature = await provider.request({
+        method: 'personal_sign',
+        params: [fundMessage(address, issuedAt), identity.address],
+      });
+      const r = await fetch('/inc/fund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shielded: address, identity: identity.address, signature, issuedAt }),
+      });
+      const j = await r.json();
+      if (!j.ok) setError(j.reason ?? 'Funding refused');
+      return j;
+    } catch (e: any) {
+      const reason = e?.code === 4001 ? 'You declined the signature' : (e?.message ?? 'Funding failed');
+      setError(reason);
+      return { ok: false, reason };
+    }
+  }, [address, identity]);
+
   return {
     address,
     wallet,
     getClient,
+    ensureFunded,
     ready: !!address,
     creating,
     reason: error ?? (address ? null : 'No shielded address yet'),

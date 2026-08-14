@@ -943,6 +943,18 @@ function PerpBody({ sym }: { sym: string }) {
     }
     setPlacing(true);
     try {
+      // The shielded wallet is brand new and holds nothing, so it cannot pay the Inco input fee.
+      // Fund it FIRST — otherwise the order reverts at the fee check and looks like a bug. The
+      // grant comes from the shared omnibus, never from the user's own wallet: that transfer
+      // would link the two addresses on-chain and undo the entire point.
+      const funded = await shielded.ensureFunded();
+      if (!funded.ok) {
+        toast(funded.reason ?? 'Could not prepare the shielded wallet', { icon: 'close' });
+        setPlacing(false);
+        setConfirm(null);
+        return;
+      }
+
       // PlaceOrderParams carries the notional directly as `usd` — no need to reconstruct it
       // from size × price, which is where the first attempt went wrong.
       const usd = Number(confirm.params.usd) || 0;

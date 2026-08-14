@@ -2,6 +2,7 @@
 import { createServer } from 'node:http';
 import { isAllowed, cohortSize } from './access.js';
 import { fundShielded, funderStatus } from './fund.js';
+import { verifyFundRequest } from './verify.js';
 
 const PORT = Number(process.env.PORT ?? 4400);
 
@@ -31,10 +32,16 @@ export function startApi() {
       let raw = '';
       req.on('data', (c) => { raw += c; if (raw.length > 2048) req.destroy(); });
       req.on('end', async () => {
-        let address: string | undefined;
-        try { address = JSON.parse(raw)?.address; } catch { /* falls through to a refusal */ }
+        let body: any = {};
+        try { body = JSON.parse(raw) || {}; } catch { /* falls through to a refusal */ }
         try {
-          const r = await fundShielded(String(address || ''));
+          // WHO first, then money. The signature must prove control of a cohort identity
+          // wallet AND be bound to this exact shielded address.
+          const who = await verifyFundRequest(body);
+          if (!who.ok) { json(res, 200, { ok: false, reason: who.reason }); return; }
+          // Deliberately not logged together — pairing identity with shielded here, in our own
+          // logs, is the one link this product exists to prevent anyone else from making.
+          const r = await fundShielded(String(body.shielded || ''));
           // 200 either way: "not eligible" is an answer, not a server fault, and the client
           // treats every non-ok the same — it does not get to distinguish reasons and probe.
           json(res, 200, r);
