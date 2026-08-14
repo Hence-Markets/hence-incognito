@@ -18,7 +18,7 @@ every other Incognito user. Inco Lightning holds the order encrypted before exec
 nothing leaks into a public mempool) and holds the encrypted map between your account and that
 shielded address, so you can later *prove* a position was yours without publishing the link.
 
-### What is actually private
+### What is actually private — Phase 1 (shielded execution)
 
 | | Hidden | Public |
 | --- | --- | --- |
@@ -35,6 +35,14 @@ precisely what a liquidation hunter looks for. Overclaiming here would make user
 exploitable, not less.
 
 ### Phase 2 — where it becomes genuinely private
+
+The claim changes shape here, and so does the UI. It stops being hidden-vs-public and becomes
+**conditional**: if your order matches, nothing about it ever reaches a public venue; if it
+does not, it goes out inside one net position that is public but unattributable. A trader
+cannot choose which happens, so promising "your trade is invisible" would be false on any day
+the book is one-sided. `VITE_PHASE` gates which claim the UI is allowed to make, and it
+**defaults to 1** — a misconfigured deploy must underclaim, never overclaim.
+
 
 Orders batch into short epochs and are netted **on ciphertext**: `e.min` gives matched volume,
 `e.add` gives the net, and no individual order is ever decrypted. Matched volume **crosses

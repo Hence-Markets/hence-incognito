@@ -156,3 +156,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* In Phase 2 the right column is not a caveat, it is half of what actually happens — so it
+   reads as an equal outcome rather than a warning. Colour still separates them, quietly. */
+.landing__phase { color: var(--dimmer); }
