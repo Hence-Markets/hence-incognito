@@ -7,8 +7,11 @@
    ========================================================= */
 import { getTicker } from './data.js';
 import * as market from './market.js';
+import { isAvantisSymbol } from './avantisUniverse';
 
-export const POPULAR = ['BTC', 'ETH', 'SOL', 'HYPE', 'XRP', 'DOGE', 'AVAX', 'LINK', 'SUI', 'NVDA', 'AAPL', 'TSLA', 'GOLD', 'SP500'];
+// Avantis lists equities as well as crypto and FX, so this stays close to Hence's own order.
+// Dropped only what the venue does not carry: GOOGL, GOLD, SP500, HYPE, XRP, SUI.
+export const POPULAR = ['BTC', 'ETH', 'SOL', 'NVDA', 'AAPL', 'TSLA', 'MSFT', 'DOGE', 'AVAX', 'ARB', 'LINK', 'EUR'];
 export const popRank = (s: string) => { const i = POPULAR.indexOf(s); return i < 0 ? 999 : i; };
 
 export type SearchOpts = { world?: 'crypto' | 'stocks'; liveOnly?: boolean; watch?: Set<string>; limit?: number };
@@ -16,7 +19,10 @@ export type SearchOpts = { world?: 'crypto' | 'stocks'; liveOnly?: boolean; watc
 // filtered + ranked universe rows ({ sym, name, coin, world, cat, maxLev, dex }).
 export function searchMarkets(query: string, opts: SearchOpts = {}): any[] {
   if (!market.isReady()) return [];
-  let list = market.getUniverse();
+  // INCOGNITO: every order routes to Avantis, so the universe is Avantis'. This is the one
+  // shared filter point — its own header notes it feeds both the palette and the drawer — so
+  // narrowing here narrows both. No-ops until the allowlist resolves (see avantisUniverse).
+  let list = market.getUniverse().filter((a: any) => isAvantisSymbol(a.sym));
   if (opts.world === 'crypto') list = list.filter((a: any) => a.world === 'crypto');
   else if (opts.world === 'stocks') list = list.filter((a: any) => a.world === 'stocks');
   if (opts.watch) list = list.filter((a: any) => opts.watch!.has(a.sym));
@@ -37,7 +43,7 @@ export function searchMarkets(query: string, opts: SearchOpts = {}): any[] {
 // in the loaded universe, in POPULAR order.
 export function popularMarkets(limit = 12): any[] {
   if (!market.isReady()) return [];
-  const uni = market.getUniverse();
+  const uni = market.getUniverse().filter((a: any) => isAvantisSymbol(a.sym));
   const bySym = new Map(uni.map((a: any) => [a.sym, a]));
   return POPULAR.map((s) => bySym.get(s)).filter(Boolean).slice(0, limit);
 }

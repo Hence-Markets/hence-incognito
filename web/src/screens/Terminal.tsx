@@ -40,6 +40,7 @@ import { info } from '../lib/hydromancer.js';
 // @ts-ignore — JS module (Polymarket positions for the unified Predictions tab)
 import { positions as pmPositions } from '../lib/polymarket.js';
 import * as market from '../lib/market.js';
+import { isAvantisSymbol } from '../lib/avantisUniverse';
 import * as fmp from '../lib/fmp.js';
 import * as accounts from '../lib/accounts.js';
 import { toast } from '../lib/ui.js';
@@ -679,7 +680,10 @@ function PerpBody({ sym }: { sym: string }) {
   const xyzFree = (!!cfg?.xyzRebate || rebate != null) && /^xyz:/i.test(String(tradeCoin || ''));
   // Live orders: native HL perps + the trade.xyz HIP-3 dex (stocks/commodities/fx/indices),
   // all USDC-collateralized under a unified account. Everything else stays read-only.
-  const readOnlyMarket = !market.isTradeable(pair);
+  // INCOGNITO: /terminal/:sym is parsed with no membership check, so an off-venue symbol
+  // reaches the ticket via a pasted link. Treated read-only exactly as Hence treats a
+  // non-tradeable market — the UI path already exists, it just needs the venue in the test.
+  const readOnlyMarket = !market.isTradeable(pair) || !isAvantisSymbol(pair);
   // Percentage buttons: buying power = available collateral × the SELECTED leverage. The order flow
   // applies this leverage on HL before opening, so sizing matches what actually executes. HL still
   // enforces the true limit; this is a convenience estimate.
@@ -1587,7 +1591,13 @@ function AcctCard({ which, acctName, acctMenu, setAcctMenu, accts, setAcct, hl, 
 }
 
 function TickerTape({ ready }: { ready: boolean }) {
-  const mv = ready ? market.topMovers('crypto', 14) : { gainers: [], losers: [] };
+  const mv0 = ready ? market.topMovers('crypto', 14) : { gainers: [], losers: [] };
+  // INCOGNITO: the marquee bypasses searchMarkets, so it needs the same narrowing — a tape
+  // scrolling markets this venue cannot fill is an invitation to click one.
+  const mv = {
+    gainers: (mv0.gainers || []).filter((r: any) => isAvantisSymbol(r.sym || r)),
+    losers: (mv0.losers || []).filter((r: any) => isAvantisSymbol(r.sym || r)),
+  };
   const syms = [...new Set([...(mv.gainers || []), ...(mv.losers || [])])] as string[];
   if (!syms.length) return <div className="term__tape"><div className="term__tape-track"><span className="term__tape-i">Loading markets…</span></div></div>;
   const Item = ({ s }: { s: string }) => { const t = getTicker(s); const u = (t.chgPct || 0) >= 0; return (

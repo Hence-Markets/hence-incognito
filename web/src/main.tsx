@@ -19,6 +19,7 @@ import * as market from './lib/market.js';
 import { initAssetIcons } from './lib/asset-icon.js';
 import { Landing } from './screens/Landing';
 import { checkAccess } from './lib/access';
+import { loadAvantisUniverse } from './lib/avantisUniverse';
 import { useAuth } from './hooks/useAuth';
 import './styles/app.css';
 import './styles/loading.css';
@@ -70,6 +71,9 @@ function Gate() {
 }
 
 (async () => {
+  // Load the Avantis allowlist alongside the market universe. Raced, not awaited hard: a slow
+  // venue must not hold the first paint, and everything downstream no-ops until it resolves.
+  loadAvantisUniverse();
   await Promise.race([market.init(), timeout(3500)]);
   root.render(
     <AuthProvider>

@@ -22,7 +22,9 @@ const WATCH_KEY = 'hence.watch.v1';
 // (Fey behaviour) instead of an empty "connect your wallet" state. A cross-asset mix of names
 // people recognise. Seeded LOCALLY on first read (not pushed to the account until the first
 // edit); a user who deliberately empties their list stores '[]', so defaults never come back.
-export const DEFAULT_WATCH = ['NVDA', 'AAPL', 'TSLA', 'MSFT', 'GOOGL', 'BTC', 'ETH', 'SOL', 'GOLD', 'SP500'];
+// INCOGNITO: Avantis DOES list equities (NVDA/AAPL/TSLA/MSFT/AMD/AMZN/COIN…), so seven of
+// Hence's ten defaults survive. Only GOOGL, GOLD and SP500 are absent and were swapped out.
+export const DEFAULT_WATCH = ['NVDA', 'AAPL', 'TSLA', 'MSFT', 'BTC', 'ETH', 'SOL', 'EUR'];
 
 /** ordered list of watched tickers (newest first). */
 export function watchList(): string[] {
