@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.local
+out/
+cache/
+broadcast/
+*.log
+.DS_Store
+
+# The product spec stays INTERNAL — it contains candid regulatory self-assessment that
+# should not live in a public, permanently-forkable repo. It lives in Notion and at
+# ../hence-incognito-spec.md. Do not re-add it during the hackathon.
+docs/spec.md
+*-spec.md
+*.tsbuildinfo

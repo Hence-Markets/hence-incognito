@@ -1,0 +1,11 @@
+{
+  "name": "hence-incognito",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Standalone shielded-trading prototype. Separate from the Hence app by design.",
+  "workspaces": ["web", "keeper"],
+  "scripts": {
+    "dev": "npm run dev --workspace web",
+    "keeper": "npm run dev --workspace keeper"
+  }
+}

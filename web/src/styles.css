@@ -1,0 +1,158 @@
+/* Hence Incognito — visual language.
+
+   Reads as "not the main app" on purpose. In an in-app design an ambient tint and a persistent
+   badge would be doing the work of telling you which mode you are in; standalone, the site's
+   own chrome does that, so this can be quiet.
+
+   Cooler and flatter than Hence: near-black ground, one restrained accent, no warmth. Discreet,
+   not conspiratorial. Committed single theme — a privacy tool that repaints itself to match the
+   host's light mode would feel like it belongs to something else. */
+
+:root {
+  --ground: #0a0b0d;
+  --surface: #121417;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #e8eaed;
+  --dim: #9aa0a6;
+  --dimmer: #6b7075;
+  --hidden: #8ab4f8;  /* what we protect — cool, calm */
+  --public: #d9a441;  /* what we cannot — warning-adjacent, never alarming */
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── landing ─────────────────────────────────────────────────────────────── */
+
+.landing {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 72px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.landing__head { display: flex; flex-direction: column; gap: 10px; color: var(--text); }
+.landing__head h1 {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.landing__sub { margin: 0; color: var(--dim); font-size: 16px; }
+
+/* The two columns ARE the disclosure. Equal weight on purpose: making "Still public" quieter
+   than "Now hidden" would be the exact dishonesty this screen exists to prevent. */
+.disclose {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.disclose__col { min-width: 0; }
+.disclose__h {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+.disclose__h--hidden { color: var(--hidden); }
+.disclose__h--public { color: var(--public); }
+.disclose ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.disclose li {
+  font-size: 14px;
+  color: var(--dim);
+  padding-left: 14px;
+  position: relative;
+  text-wrap: pretty;
+}
+.disclose li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+/* Never let this shrink into fine print — it is the claim that keeps the rest honest. */
+.landing__limits {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--dimmer);
+  border-left: 2px solid var(--line-strong);
+  padding-left: 12px;
+}
+
+.landing__cta {
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  background: var(--text);
+  color: var(--ground);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 13px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+.landing__cta:hover:not(:disabled) { opacity: 0.88; }
+.landing__cta:disabled {
+  background: transparent;
+  color: var(--dimmer);
+  cursor: not-allowed;
+}
+.landing__cta:focus-visible,
+.landing a:focus-visible {
+  outline: 2px solid var(--hidden);
+  outline-offset: 3px;
+}
+
+.landing__denied { margin: -14px 0 0; font-size: 13.5px; color: var(--public); }
+
+.landing__foot {
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--dimmer);
+}
+.landing__foot a { color: var(--dim); text-underline-offset: 2px; }
+
+/* ── terminal (next milestone) ───────────────────────────────────────────── */
+
+.terminal { max-width: 560px; margin: 0 auto; padding: 72px 24px; }
+.terminal__todo { color: var(--dimmer); font-family: var(--mono); font-size: 14px; }
+
+@media (max-width: 520px) {
+  .landing { padding: 44px 18px 36px; }
+  .disclose { grid-template-columns: 1fr; gap: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
