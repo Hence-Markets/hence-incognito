@@ -109,10 +109,19 @@ export async function placeShieldedOrder(
   try {
     // Loaded lazily so a missing/misconfigured SDK surfaces here — as a refusal to place —
     // rather than at module load, where it would take the whole terminal down.
-    const { Lightning, handleTypes } = (await import('@inco/lightning-js')) as any;
-    const zap = Lightning.latest(
-      import.meta.env.VITE_NETWORK === 'mainnet' ? 'mainnet' : 'testnet'
-    );
+    /* THE SHAPE MATTERS AND IT WAS WRONG. `Lightning` is exported from the /lite subpath, not
+       the package root — the root has no such export, so destructuring it here yielded
+       undefined and the next line threw "Cannot read properties of undefined (reading
+       'latest')". It typechecked and built cleanly for weeks because the import was cast to
+       any; nothing caught it until an order was actually placed.
+
+       The chain-bound constructors are also async, and named per chain rather than taking a
+       'testnet' string. */
+    const { Lightning } = await import('@inco/lightning-js/lite');
+    const { handleTypes } = await import('@inco/lightning-js');
+    const zap = import.meta.env.VITE_NETWORK === 'mainnet'
+      ? await Lightning.baseMainnet()
+      : await Lightning.baseSepoliaTestnet();
     ciphertext = await zap.encrypt(BigInt(Math.round(intent.size)), {
       accountAddress: shielded.address,
       dappAddress: dapp,

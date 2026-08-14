@@ -80,6 +80,27 @@ const INCO_ABI = [
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/* Wait until a balance is VISIBLE, not merely mined.
+ *
+ * `sepolia.base.org` is load-balanced across nodes that lag each other. A transaction receipt
+ * proves inclusion on whichever node answered — meanwhile `getBlockNumber()` can still report
+ * the PREVIOUS block, and a send routed to that node sees an empty account and fails with
+ * "total cost exceeds the balance". Measured here: the receipt named block 45482225 while the
+ * head still read 45482224, and the balance appeared ~2s later.
+ *
+ * So a receipt is not a synchronisation point for read-after-write. This is. */
+async function waitForBalance(pub: any, address: string, min: bigint, timeoutMs = 30_000) {
+  const started = Date.now();
+  for (;;) {
+    const bal = await pub.getBalance({ address });
+    if (bal >= min) return bal;
+    if (Date.now() - started > timeoutMs) {
+      throw new Error(`funded ${address} but the balance never became visible — RPC is lagging badly`);
+    }
+    await sleep(750);
+  }
+}
+
 async function main() {
   if (!CONTRACT) throw new Error('INCOGNITO_CONTRACT is not set');
   if (!FUNDER_KEY) throw new Error('OMNIBUS_KEY is not set — the seed wallets need gas from somewhere');
@@ -146,8 +167,17 @@ async function main() {
   console.log(`[seed] funder    ${funder.address} holds ${formatEther(funderBal)} ETH, needs ${formatEther(totalGas)}`);
   if (funderBal < totalGas) throw new Error('funder cannot cover the seed');
 
-  const { Lightning, handleTypes } = (await import('@inco/lightning-js')) as any;
-  const zap = Lightning.latest(process.env.NETWORK === 'mainnet' ? 'mainnet' : 'testnet');
+  /* `Lightning` lives in the /lite subpath, NOT the package root, and the chain-bound
+     constructors are async. The root export has no `Lightning` at all, so the previous
+     `Lightning.latest('testnet')` was reading `.latest` off undefined — which is exactly the
+     error this produced the first time anything actually tried to encrypt. */
+  const { Lightning } = await import('@inco/lightning-js/lite');
+  const { handleTypes } = await import('@inco/lightning-js');
+  const zap = process.env.NETWORK === 'mainnet'
+    ? await Lightning.baseMainnet()
+    : await Lightning.baseSepoliaTestnet();
+
+  let nonce = await pub.getTransactionCount({ address: funder.address });
 
   const placed: { addr: string; size: number; side: string; tx: string }[] = [];
   /* The epoch the book is being built in — learned from the FIRST order's own log rather than
@@ -162,8 +192,14 @@ async function main() {
     const acct = privateKeyToAccount(key);
     const wallet = createWalletClient({ account: acct, chain: CHAIN, transport: http() });
 
-    const fundTx = await funderWallet.sendTransaction({ to: acct.address, value: PER_WALLET });
+    /* The funder's nonce is tracked locally rather than re-fetched per send. Against a lagging
+       load balancer, `getTransactionCount` can answer from a node that has not seen the
+       previous transfer, hand back a stale nonce, and the send fails as a replacement. */
+    const fundTx = await funderWallet.sendTransaction({
+      to: acct.address, value: PER_WALLET, nonce: nonce++,
+    });
     await pub.waitForTransactionReceipt({ hash: fundTx });
+    await waitForBalance(pub, acct.address, PER_WALLET);
 
     const ciphertext = await zap.encrypt(BigInt(o.size), {
       accountAddress: acct.address,
