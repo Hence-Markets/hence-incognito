@@ -22,7 +22,25 @@ createRoot(document.getElementById('root')!).render(
           loginMethods: ['wallet', 'email'],
           appearance: {
             theme: 'dark',
-            walletList: ['metamask', 'rainbow', 'coinbase_wallet', 'zerion', 'okx_wallet', 'phantom'],
+            /* 'detected_ethereum_wallets' FIRST, and it is load-bearing rather than tidy:
+               Rabby is an EIP-6963 injected extension with no pinnable entry of its own
+               ('rabby_wallet' exists but is marked deprecated / no longer supported), so this
+               is what surfaces it — along with any other extension a trader already runs.
+
+               It also repairs an own goal. Privy's default list is
+               ['detected_wallets','metamask','coinbase_wallet','rainbow','wallet_connect'],
+               and specifying walletList REPLACES that default outright — the previous curated
+               list silently dropped both detected wallets and WalletConnect, which made Rabby
+               impossible to connect at all. */
+            walletList: [
+              'detected_ethereum_wallets',
+              'metamask',
+              'rainbow',
+              'coinbase_wallet',
+              'zerion',
+              'okx_wallet',
+              'wallet_connect',
+            ],
           },
           // Still created for email users — and it is also what a shielded address will be
           // built on, which is why the embedded wallet is never the identity address below.
