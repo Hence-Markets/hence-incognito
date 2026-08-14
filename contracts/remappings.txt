@@ -1,0 +1,4 @@
+forge-std/=../node_modules/forge-std/src/
+@inco/=../node_modules/@inco/
+@openzeppelin/=../node_modules/@openzeppelin/
+safe-smart-account/=../node_modules/@safe-global/safe-smart-account/contracts/

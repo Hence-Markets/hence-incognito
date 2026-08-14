@@ -14,3 +14,6 @@ broadcast/
 docs/spec.md
 *-spec.md
 *.tsbuildinfo
+
+# vendored agent skill — install with `npx skills add Inco-fhevm/skills`
+.agents/
