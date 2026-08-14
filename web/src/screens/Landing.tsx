@@ -61,6 +61,32 @@ export function Landing({
 
       <p className="landing__limits">{d.limits}</p>
 
+      {/* THE DEMO NOTICE, above the button rather than in the footer.
+          It is the single most important sentence on this page and the one a person is most
+          likely to skip, so it sits where the eye already is: directly over the thing they are
+          about to press. Testnet, hackathon, no warranty, no real money. */}
+      <div className="landing__demo">
+        <p className="landing__demo-lead">
+          This is a demo on the <b>Base Sepolia</b> testnet, built for the <b>Inco hackathon</b>.
+        </p>
+        <p>
+          Nothing here is real money. Orders are encrypted trade <em>intents</em> on a test
+          network — no funds are held, transferred or invested, no position is opened at any
+          venue, and nothing can be withdrawn or redeemed. Testnet ETH has no value.
+        </p>
+        <p>
+          Provided as-is, with no warranty and no liability, by people who will change it
+          without notice. It is unaudited prototype software and may lose orders, mis-net a
+          book, or stop working entirely. Nothing here is financial advice or an offer to
+          trade. Do not send real assets to any address shown in this app.
+        </p>
+        <p>
+          Privacy has limits, and they are stated plainly above: sides, markets and addresses
+          are public on chain, and matched volume is hidden from a venue — not from Inco's
+          operators, and not from anyone analysing the chain.
+        </p>
+      </div>
+
       {/* One button, two jobs — sign in, then enter. Never show "Enter incognito" to someone
           who is not signed in: the promise only holds once we know which address is shielded. */}
       <button

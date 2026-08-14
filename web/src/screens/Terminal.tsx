@@ -47,6 +47,7 @@ import { positions as pmPositions } from '../lib/polymarket.js';
 import * as market from '../lib/market.js';
 import { isAvantisSymbol } from '../lib/avantisUniverse';
 import { marketOf } from '../lib/markets';
+import { mainTerminalUrl } from '../lib/mainApp';
 import type { Residual } from '../lib/order';
 import * as fmp from '../lib/fmp.js';
 import * as accounts from '../lib/accounts.js';
@@ -1139,6 +1140,18 @@ function PerpBody({ sym }: { sym: string }) {
             <Link key={s} className="term__fav-i" to={'/terminal/' + s}><Logo sym={s} size={14} />{s} <span className={tt.changeReal ? (u ? 'up' : 'down') : 'muted'}>{tt.changeReal ? fmtPct(tt.chgPct) : '—'}</span></Link>
           ); })}
           <button className="term__fav-cta" onClick={() => setPaletteOpen(true)}>{watch.size ? '+ Add' : 'Search markets'} <kbd>⌘K</kbd></button>
+          {/* The way OUT. Incognito is a mode, and a mode you cannot leave from the screen it
+              applies to is a trap — the same reason Chrome puts the incognito badge in the
+              window it belongs to and not in a menu. Mirrors the button that brings you here
+              from the main app's terminal. */}
+          <a className="inc__exit" href={mainTerminalUrl(pair)} title="Leave incognito — back to the Hence terminal">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3.5 12.5h17M7 12.5c0-3.6.9-6 5-6s5 2.4 5 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              <circle cx="8.5" cy="17" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+              <circle cx="15.5" cy="17" r="2.6" stroke="currentColor" strokeWidth="1.8" />
+            </svg>
+            <span>Exit incognito</span>
+          </a>
         </div>
 
         {/* ticker marquee — top header strip (trade.xyz anatomy) */}

@@ -8,6 +8,7 @@ import { openAccounts } from './screens/accounts.js';
 import { openShortcuts } from './lib/shortcuts';
 import { Assistant } from './components/Assistant';
 import { toggleAsk, askOnNavigate, openAsk } from './lib/assistant';
+import { mainAppUrl } from './lib/mainApp';
 import { capturePendingAskFromUrl, peekPendingAsk, clearPendingAsk } from './lib/pendingAsk';
 import { capturePendingRefFromUrl } from './lib/pendingRef';
 import { initAnalytics, trackPageview } from './lib/analytics';
@@ -299,6 +300,26 @@ function PendingHandleRunner() {
 // .view-enter (viewIn: fade + 6px slide-up) page transition the migration dropped.
 // (The key sits inside <Suspense>, so for lazy chunks the animation runs once the
 // screen actually mounts, not on the loading fallback.)
+/* Hand the visitor to the real app, on the same screen they asked for.
+   A visible beat rather than a bare redirect: a window that navigates itself with no
+   explanation reads as a hijack, and this one is crossing to a different domain. */
+function LeaveToMain() {
+  const location = useLocation();
+  useEffect(() => {
+    const t = setTimeout(() => window.location.replace(mainAppUrl(location.pathname)), 550);
+    return () => clearTimeout(t);
+  }, [location.pathname]);
+  return (
+    <div className="inc__leave">
+      <div className="inc__leave-card">
+        <b>Leaving incognito</b>
+        <p>That screen lives in the main Hence app. Taking you there…</p>
+        <a href={mainAppUrl(location.pathname)}>Continue to app.hence.markets</a>
+      </div>
+    </div>
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
   // The page-enter animation (viewIn: fade + 6px slide) is keyed so it replays on real
@@ -307,48 +328,15 @@ function AnimatedRoutes() {
   const animKey = location.pathname.startsWith('/terminal') ? '/terminal' : location.pathname;
   return (
     <div className="view-enter" key={animKey}>
+      {/* TWO SCREENS. Incognito is a fork of the entire Hence app, so every other route is
+          still compiled in and every dock button still points at one — but rendering them here
+          would serve a stale copy of the real product from a different deployment, silently
+          diverging from app.hence.markets. Everything except the terminal leaves for the real
+          app, carrying the same path, so Portfolio goes to Portfolio rather than to a
+          lookalike nobody maintains. */}
       <Routes location={location}>
-        <Route path="/" element={<Dashboard />} />
-        {/* one unified terminal owns every /terminal/* path (perp #/terminal/:sym +
-            prediction #/terminal/m/:id) so the shell morphs in place instead of remounting */}
         <Route path="/terminal/*" element={<Terminal />} />
-        {/* the prediction-markets BROWSE landing; individual markets live in the terminal */}
-        <Route path="/predict" element={<Predict />} />
-        {/* prediction markets moved INTO the terminal (#/terminal/m/:id); keep old links alive */}
-        <Route path="/predict/:id" element={<PredictRedirect />} />
-        <Route path="/stock/:sym" element={<Stock />} />
-        <Route path="/stock/:sym/:tab" element={<StockTabRedirect />} />
-        <Route path="/analyst/:sym" element={<AnalystCoverage />} />
-        <Route path="/analysis/:sym" element={<Analysis />} />
-        <Route path="/signals" element={<Signals />} />
-        <Route path="/signals/source/:id" element={<SignalSource />} />
-        <Route path="/signals/show/:id" element={<SignalShow />} />
-        <Route path="/signals/:sym" element={<Signals />} />
-        <Route path="/economy" element={<Economy />} />
-        <Route path="/watchlist" element={<Watchlist />} />
-        {/* same three-tab screen as /watchlist — it just lands on the Portfolio tab */}
-        <Route path="/portfolio" element={<Watchlist />} />
-        <Route path="/screener" element={<Screener />} />
-        <Route path="/backtest" element={<Backtest />} />
-        <Route path="/theses" element={<Theses />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/compare" element={<Compare />} />
-        <Route path="/compare/:sym" element={<Compare />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/onboarding/:step" element={<Onboarding />} />
-        <Route path="/welcome" element={<Welcome />} />
-        <Route path="/welcome/:step" element={<Welcome />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/preferences" element={<Preferences />} />
-        <Route path="/referral" element={<Referral />} />
-        {/* one route for both — a handle is [a-z0-9_]{3,20} and an address is 40 hex,
-            so they can never collide. Profile branches on the shape. */}
-        <Route path="/u/:id" element={<Profile />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/legal" element={<Legal />} />
-        <Route path="/legal/:doc" element={<Legal />} />
-        <Route path="/error" element={<ErrorScreen />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<LeaveToMain />} />
       </Routes>
     </div>
   );

@@ -64,7 +64,13 @@ function Gate() {
   return (
     <Landing
       status={status}
-      onEnter={() => setEntered(true)}
+      /* Straight to the terminal, not to the route the hash happens to hold. The app's
+         default is "/" — a Dashboard that now redirects OUT to the main app — so entering
+         without this would bounce a user off the site they just signed into. */
+      onEnter={() => {
+        if (!location.hash.startsWith('#/terminal')) location.hash = '#/terminal/BTC';
+        setEntered(true);
+      }}
       onSignIn={login}
       shortAddr={address ? `${address.slice(0, 6)}…${address.slice(-4)}` : undefined}
     />
